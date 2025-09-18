@@ -18,7 +18,7 @@ CatJAM Monitor follows a modular architecture with clear separation of concerns:
                               │
                               ▼
                        ┌─────────────────┐
-                       │   Reddit API    │
+                       │   Imgflip API   │
                        │   (Optional)    │
                        └─────────────────┘
 ```
@@ -31,7 +31,7 @@ CatJAM Monitor follows a modular architecture with clear separation of concerns:
 - **Keyboard Monitoring**: Uses `pynput` for cross-platform input detection
 - **Trigger Processing**: Matches typed text against trigger database
 - **Serial Communication**: Sends commands to ESP32 via pyserial
-- **Reddit Integration**: Fetches dynamic triggers (optional)
+- **Imgflip Integration**: Fetches dynamic triggers (optional)
 - **Mode Management**: Handles different operation modes
 
 #### Main Loop Structure
@@ -45,9 +45,10 @@ def main():
     # Main processing loop
     while True:
         check_triggers()
-        update_reddit_triggers()  # If enabled
+        update_imgflip_triggers()  # If enabled
         process_serial_commands()
         time.sleep(0.1)
+```
 ```
 
 ### 2. Trigger System
@@ -67,7 +68,7 @@ Pre-configured triggers stored in `triggers.json`:
 ```
 
 #### Dynamic Triggers
-Reddit-powered triggers that update automatically:
+Imgflip-powered triggers that update automatically:
 ```json
 {
   "dynamic": [
@@ -75,7 +76,7 @@ Reddit-powered triggers that update automatically:
       "trigger": "trending_word",
       "response": "Hot take: [trending content]",
       "animation": "meme_surprise",
-      "source": "reddit",
+      "source": "imgflip",
       "score": 150
     }
   ]

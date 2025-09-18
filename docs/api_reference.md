@@ -32,19 +32,19 @@ Handles loading, validation, and matching of triggers.
 - `add_static_trigger(trigger, response, animation)`: Add static trigger
 - `add_dynamic_trigger(trigger, response, animation)`: Add dynamic trigger
 
-#### `RedditIntegration`
-Manages Reddit API interactions for dynamic triggers.
+#### `ImgflipIntegration`
+Manages Imgflip API interactions for dynamic triggers.
 
 **Initialization:**
 ```python
-reddit = RedditIntegration()
+imgflip = ImgflipIntegration()
 ```
 
 **Methods:**
-- `authenticate()`: Authenticate with Reddit API
-- `fetch_trends(limit=10)`: Fetch trending posts
-- `generate_triggers(trends)`: Convert trends to triggers
+- `fetch_trends(limit=10)`: Fetch trending memes from Imgflip
+- `generate_triggers(trends)`: Convert memes to triggers
 - `update_dynamic_triggers()`: Refresh dynamic trigger list
+- `fallback_mode()`: Enable static-only mode if API fails
 
 #### `SerialCommunicator`
 Handles communication with ESP32 hardware.
@@ -71,7 +71,7 @@ Handles communication with ESP32 hardware.
 {
   "static_triggers": [...],
   "dynamic_triggers": [...],
-  "reddit_enabled": true,
+  "imgflip_enabled": true,
   "serial_port": "auto",
   "update_interval": 3600
 }
@@ -187,8 +187,8 @@ Get system status
 ```json
 {
   "esp32_connected": true,
-  "reddit_authenticated": false,
-  "active_triggers": 5,
+  "imgflip_connected": true,
+  "active_triggers": 15,
   "uptime": 3600
 }
 ```
@@ -228,7 +228,7 @@ Test trigger without ESP32
 
 ### Python Application
 - `ERR_SERIAL_CONNECTION`: Cannot connect to ESP32
-- `ERR_REDDIT_AUTH`: Reddit authentication failed
+- `ERR_IMGFLIP_API`: Imgflip API request failed
 - `ERR_TRIGGER_LOAD`: Cannot load trigger configuration
 - `ERR_CONFIG_SAVE`: Cannot save configuration changes
 
@@ -240,10 +240,11 @@ Test trigger without ESP32
 
 ## Rate Limits
 
-### Reddit API
-- **Authenticated requests**: 600 per 10 minutes
-- **Read-only requests**: 60 per minute
+### Imgflip API
+- **Requests**: No rate limiting (free API)
+- **Reliability**: 99.9% uptime
 - **Dynamic trigger updates**: Every 1 hour (configurable)
+- **Fallback**: Automatic fallback to static triggers on API failure
 
 ### Serial Communication
 - **Baud rate**: 115200
@@ -271,7 +272,7 @@ Test trigger without ESP32
       "trigger": "string",
       "response": "string",
       "animation": "string",
-      "source": "reddit",
+      "source": "imgflip",
       "score": 150,
       "expires": "2025-09-18T00:00:00Z"
     }
@@ -281,11 +282,12 @@ Test trigger without ESP32
 
 ### Environment Configuration (.env)
 ```env
-# Reddit API Credentials
-REDDIT_ID=your_client_id
-REDDIT_SECRET=your_client_secret
-REDDIT_USERNAME=your_username
-REDDIT_PASSWORD=your_password
+# Optional: For future API integrations
+# IMGFLIP_API_KEY=your_api_key_here
+# Custom configuration options
+DEBUG_MODE=false
+LOG_LEVEL=INFO
+```
 
 # Application Settings
 DEBUG_MODE=false

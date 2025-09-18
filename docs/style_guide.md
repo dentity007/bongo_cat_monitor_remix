@@ -61,62 +61,86 @@ def proc_key(k, tm):
 
 ```python
 """
-User authentication module for Reddit API integration.
+Imgflip API integration module.
 
-This module handles OAuth authentication, token management, and user session
-management for Reddit API access.
+This module handles fetching trending memes and managing API requests
+for dynamic trigger generation.
 
 Author: dentity007
-Version: 1.0.0
+Version: 2.0.0
 """
 
-from typing import Optional, Dict, Any
-import praw
+from typing import Optional, Dict, Any, List
+import requests
 
-class RedditAuthenticator:
-    """Handles Reddit API authentication and session management."""
+class ImgflipIntegration:
+    """Handles Imgflip API integration for dynamic triggers."""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
-        """Initialize authenticator with configuration.
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        """Initialize Imgflip integration with optional configuration.
 
         Args:
-            config: Dictionary containing Reddit API credentials and settings
-
-        Raises:
-            ValueError: If required configuration is missing
+            config: Optional dictionary containing API settings
         """
-        self.config = config
-        self._validate_config()
+        self.config = config or {}
+        self.base_url = "https://api.imgflip.com"
+        self.timeout = self.config.get('timeout', 10)
 
-    def authenticate(self) -> Optional[praw.Reddit]:
-        """Authenticate with Reddit API and return client instance.
+    def fetch_trending_memes(self, limit: int = 10) -> Optional[List[Dict[str, Any]]]:
+        """Fetch trending memes from Imgflip API.
+
+        Args:
+            limit: Maximum number of memes to fetch
 
         Returns:
-            Authenticated Reddit client instance, or None if authentication fails
+            List of meme dictionaries, or None if request fails
         """
         try:
-            reddit = praw.Reddit(
-                client_id=self.config['client_id'],
-                client_secret=self.config['client_secret'],
-                username=self.config['username'],
-                password=self.config['password'],
-                user_agent=self.config['user_agent']
+            response = requests.get(
+                f"{self.base_url}/get_memes",
+                timeout=self.timeout
             )
-            # Verify authentication by checking user
-            user = reddit.user.me()
-            print(f"Authenticated as: {user.name}")
-            return reddit
+            response.raise_for_status()
+
+            data = response.json()
+            memes = data.get('data', {}).get('memes', [])
+
+            # Return top memes by popularity/usage
+            return memes[:limit]
+
+        except requests.RequestException as e:
+            print(f"Imgflip API request failed: {e}")
+            return None
         except Exception as e:
-            print(f"Authentication failed: {e}")
+            print(f"Unexpected error: {e}")
             return None
 
-    def _validate_config(self) -> None:
-        """Validate that all required configuration is present."""
-        required_keys = ['client_id', 'client_secret', 'username', 'password']
-        missing_keys = [key for key in required_keys if key not in self.config]
+    def generate_triggers(self, memes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate trigger configurations from meme data.
 
-        if missing_keys:
-            raise ValueError(f"Missing required configuration keys: {missing_keys}")
+        Args:
+            memes: List of meme dictionaries from API
+
+        Returns:
+            List of trigger configurations
+        """
+        triggers = []
+
+        for meme in memes:
+            # Create trigger based on meme name
+            trigger_word = self._normalize_trigger(meme['name'])
+
+            trigger = {
+                'trigger': trigger_word,
+                'response': f"Viral: {meme['name']}—cat's got the meme! 😂",
+                'animation': 'meme_surprise',
+                'source': 'imgflip',
+                'meme_id': meme['id']
+            }
+
+            triggers.append(trigger)
+
+        return triggers
 ```
 
 ### Error Handling
@@ -130,10 +154,29 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def safe_reddit_request(reddit_client, subreddit_name):
-    """Safely fetch subreddit data with proper error handling."""
-    try:
-        subreddit = reddit_client.subreddit(subreddit_name)
+def safe_api_request(url, timeout=10, max_retries=3):
+    """Safely make API requests with proper error handling and retries."""
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+
+            logger.info(f"API request successful: {url}")
+            return response.json()
+
+        except requests.Timeout:
+            logger.warning(f"API request timeout (attempt {attempt + 1}/{max_retries}): {url}")
+        except requests.HTTPError as e:
+            logger.error(f"API HTTP error: {e.response.status_code} - {url}")
+            break  # Don't retry HTTP errors
+        except requests.RequestException as e:
+            logger.error(f"API request failed (attempt {attempt + 1}/{max_retries}): {e}")
+
+        if attempt < max_retries - 1:
+            time.sleep(2 ** attempt)  # Exponential backoff
+
+    logger.error(f"All API request attempts failed: {url}")
+    return None
         posts = list(subreddit.hot(limit=10))
         logger.info(f"Successfully fetched {len(posts)} posts from r/{subreddit_name}")
         return posts

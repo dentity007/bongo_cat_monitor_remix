@@ -8,13 +8,53 @@
   ],
   "dynamic": [
     {
-      "trigger": "lol",
-      "response": "That joke slayed! Meow!",
+      "trigger": "drake",
+      "response": "Viral: Drake Hotline Bling\u2014cat's got the meme! \ud83d\ude02",
       "animation": "meme_surprise"
     },
     {
-      "trigger": "wow",
-      "response": "Mind blown! \ud83d\udc31",
+      "trigger": "two",
+      "response": "Viral: Two Buttons\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "distracted",
+      "response": "Viral: Distracted Boyfriend\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "bernie",
+      "response": "Viral: Bernie I Am Once Again Asking For Your Support\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "left",
+      "response": "Viral: Left Exit 12 Off Ramp\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "running",
+      "response": "Viral: Running Away Balloon\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "uno",
+      "response": "Viral: UNO Draw 25 Cards\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "disaster",
+      "response": "Viral: Disaster Girl\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "sad",
+      "response": "Viral: Sad Pablo Escobar\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "epic",
+      "response": "Viral: Epic Handshake\u2014cat's got the meme! \ud83d\ude02",
       "animation": "meme_surprise"
     }
   ]

@@ -40,36 +40,34 @@ xcode-select --install
 brew install python@3.9
 ```
 
-#### Issue: Reddit Authentication Fails
+#### Issue: Imgflip API Connection Fails
 **Symptoms:**
 ```
-prawcore.exceptions.ResponseException: received 401 HTTP response
+requests.exceptions.ConnectionError: Failed to establish connection
+Imgflip API unavailable, using static triggers only
 ```
 
 **Solutions:**
-1. **Verify Reddit App Configuration**
-   - Go to https://www.reddit.com/prefs/apps
-   - Ensure app type is "script"
-   - Check client_id and client_secret are correct
-
-2. **Update Credentials in .env**
+1. **Check Internet Connection**
 ```bash
-# Edit .env file
-REDDIT_CLIENT_ID=your_actual_client_id
-REDDIT_CLIENT_SECRET=your_actual_client_secret
-REDDIT_USERNAME=your_username
-REDDIT_PASSWORD=your_password
+# Test basic connectivity
+ping -c 3 api.imgflip.com
 ```
 
-3. **Test Authentication Separately**
+2. **Verify API Endpoint**
+   - Imgflip API doesn't require authentication
+   - Check if api.imgflip.com is accessible
+   - App automatically falls back to static triggers
+
+3. **Test API Access**
 ```bash
 cd app
-python test_reddit.py
+python -c "import requests; print(requests.get('https://api.imgflip.com/get_memes').status_code)"
 ```
 
-4. **Check Reddit API Limits**
-   - Wait 1 minute between authentication attempts
-   - Ensure app is not rate-limited
+4. **Check Firewall/Network Restrictions**
+   - Ensure outbound HTTPS connections are allowed
+   - No proxy configuration needed for Imgflip
 
 ### ESP32 Hardware Issues
 
@@ -201,33 +199,34 @@ with keyboard.Listener(on_press=on_press) as listener:
 
 #### Issue: Dynamic Triggers Not Updating
 **Symptoms:**
-- Static triggers work, but Reddit triggers don't appear
-- No new triggers added from Reddit
+- Static triggers work, but Imgflip triggers don't appear
+- No new triggers added from Imgflip API
 
 **Solutions:**
-1. **Check Reddit API Access**
+1. **Check Imgflip API Access**
 ```python
-# Test Reddit connection
+# Test Imgflip API connection
+import requests
+
 try:
-    reddit = praw.Reddit(
-        client_id=os.getenv('REDDIT_CLIENT_ID'),
-        client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
-        username=os.getenv('REDDIT_USERNAME'),
-        password=os.getenv('REDDIT_PASSWORD'),
-        user_agent='CatJAM Monitor v1.0'
-    )
-    print(reddit.user.me())
+    response = requests.get('https://api.imgflip.com/get_memes', timeout=10)
+    if response.status_code == 200:
+        data = response.json()
+        print(f"✅ Imgflip API working: {len(data['data']['memes'])} memes available")
+    else:
+        print(f"❌ API error: {response.status_code}")
 except Exception as e:
-    print(f"Reddit auth failed: {e}")
+    print(f"❌ Connection failed: {e}")
 ```
 
-2. **Verify Subreddit Access**
+2. **Verify API Response Format**
 ```python
-# Test subreddit access
-subreddit = reddit.subreddit('memes')
-print(f"Subreddit: {subreddit.display_name}")
-for post in subreddit.hot(limit=5):
-    print(f"Post: {post.title}")
+# Check API response structure
+response = requests.get('https://api.imgflip.com/get_memes')
+data = response.json()
+print("Available memes:")
+for meme in data['data']['memes'][:5]:
+    print(f"- {meme['name']} (ID: {meme['id']})")
 ```
 
 3. **Check Update Frequency**

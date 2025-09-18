@@ -2,7 +2,7 @@
 CatJAM Monitor - Main Application
 
 A Python application that monitors keyboard input and sends meme triggers to an ESP32
-display. Features include static and dynamic triggers, Reddit integration for trending
+display. Features include static and dynamic triggers, Imgflip API integration for trending
 content, and real-time serial communication with hardware.
 
 Author: dentity007
@@ -20,7 +20,7 @@ import os
 from textblob import TextBlob  # Optional, for later
 from dotenv import load_dotenv
 load_dotenv()  # Loads .env
-import praw  # Add this import at top if not there
+import requests  # For Imgflip API
 
 # =============================================================================
 # COMMAND LINE ARGUMENT PARSING
@@ -110,56 +110,53 @@ listener = pynput.keyboard.Listener(on_press=on_key)
 listener.start()
 
 # =============================================================================
-# REDDIT INTEGRATION SYSTEM
+# IMGFLIP MEME API INTEGRATION (FAST!)
 # =============================================================================
 
 def update_triggers():
     """
-    Fetch trending content from Reddit and update dynamic triggers.
+    Fetch trending memes from Imgflip API and update dynamic triggers.
 
-    Connects to Reddit API, fetches hot posts from r/memes, and creates
-    dynamic triggers based on trending content. Falls back to static
-    triggers if Reddit is unavailable.
+    Uses Imgflip's free API to get classic and trending memes without authentication.
+    Much faster than Reddit API - no auth, single HTTP request.
     """
     try:
-        # Initialize Reddit API client
-        reddit = praw.Reddit(
-            client_id=os.getenv('REDDIT_ID'),
-            client_secret=os.getenv('REDDIT_SECRET'),
-            user_agent='CatJAM Monitor v0.1 (by dentity007)'
-        )
+        print("🚀 Fetching memes from Imgflip...")
 
-        # Step 1: Test basic connectivity first
-        print("🔍 Testing Reddit API connection...")
-        test_sub = reddit.subreddit('test')
-        test_sub.display_name  # This should work if credentials are valid
+        # Single fast HTTP request to Imgflip (no auth needed!)
+        response = requests.get("https://api.imgflip.com/get_memes", timeout=5)
 
-        # Step 2: Fetch trending memes from r/memes
-        print("📡 Fetching trending memes...")
-        subreddit = reddit.subreddit('memes')
-        trends = [post.title.lower() for post in subreddit.hot(limit=10) if post.score > 50]
+        if response.status_code == 200:
+            data = response.json()['data']['memes']
 
-        # Step 3: Create dynamic triggers from trending content
-        new_dynamic = []
-        for trend in trends[:5]:  # Limit to top 5 trends
-            response = f"Hot take: {trend.capitalize()}—this cat's jamming! 🐱"
-            trigger_word = trend.split()[0] if trend.split() else trend
-            new_dynamic.append({
-                "trigger": trigger_word,
-                "response": response,
-                "animation": "meme_surprise"
-            })
+            # Create dynamic triggers from top memes (super fast!)
+            new_dynamic = []
+            for meme in data[:10]:  # Get top 10 memes
+                # Use first word of meme name as trigger
+                trigger_word = meme['name'].lower().split()[0]
+                # Create fun response with meme name
+                response_msg = f"Viral: {meme['name']}—cat's got the meme! 😂"
+                new_dynamic.append({
+                    "trigger": trigger_word,
+                    "response": response_msg,
+                    "animation": "meme_surprise"
+                })
 
-        # Step 4: Save updated triggers to file
-        triggers['dynamic'] = new_dynamic
-        with open('triggers.json', 'w') as f:
-            json.dump(triggers, f, indent=2)
-        print(f"✅ Updated dynamic triggers with Reddit hits: {', '.join([t['trigger'] for t in new_dynamic])}")
+            # Update triggers and save to file
+            triggers['dynamic'] = new_dynamic
+            with open('triggers.json', 'w') as f:
+                json.dump(triggers, f, indent=2)
 
+            print(f"✅ Imgflip trends loaded: {', '.join([t['trigger'] for t in new_dynamic])}")
+        else:
+            print(f"❌ Imgflip API error: HTTP {response.status_code}")
+
+    except requests.exceptions.Timeout:
+        print("⏰ Imgflip request timed out - using cached triggers")
+    except requests.exceptions.RequestException as e:
+        print(f"🌐 Network error: {e}")
     except Exception as e:
-        # Handle Reddit API failures gracefully
-        print(f"❌ Reddit fetch failed: {e}")
-        print("💡 Tips: Check Reddit app settings, ensure 'script' type, or try manual trigger setup")
+        print(f"❌ Fetch error: {e}")
 
         # Fallback: Keep existing dynamic triggers or create basic ones
         if not triggers.get('dynamic'):
@@ -167,9 +164,7 @@ def update_triggers():
                 {"trigger": "lol", "response": "That joke slayed! Meow!", "animation": "meme_surprise"},
                 {"trigger": "wow", "response": "Mind blown! 🐱", "animation": "meme_surprise"}
             ]
-            print("🔄 Added fallback dynamic triggers")
-
-# =============================================================================
+            print("🔄 Using fallback triggers")# =============================================================================
 # SCHEDULER SETUP
 # =============================================================================
 
