@@ -3,6 +3,7 @@ directories:
   buildResources: build
 appId: com.bongocat.electron
 productName: Bongo Cat
+icon: assets/icons/icon.png
 files:
   - filter:
       - main.js

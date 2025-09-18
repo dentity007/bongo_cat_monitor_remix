@@ -35,6 +35,7 @@
   "build": {
     "appId": "com.bongocat.electron",
     "productName": "Bongo Cat",
+    "icon": "assets/icons/icon.png",
     "directories": {
       "output": "dist"
     },
