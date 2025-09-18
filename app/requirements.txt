@@ -1,0 +1,9 @@
+pyserial
+pynput
+requests
+beautifulsoup4
+schedule
+textblob
+fastapi
+uvicorn
+python-dotenv  # For env vars later

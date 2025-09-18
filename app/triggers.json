@@ -1,0 +1,6 @@
+{
+  "static": [
+    {"trigger": "bullet", "response": "Too close for missiles—switching to guns! Meow-ver and out.", "animation": "meme_surprise"}
+  ],
+  "dynamic": []
+}
