@@ -1,6 +1,21 @@
 {
   "static": [
-    {"trigger": "bullet", "response": "Too close for missiles—switching to guns! Meow-ver and out.", "animation": "meme_surprise"}
+    {
+      "trigger": "bullet",
+      "response": "Too close for missiles\u2014switching to guns! Meow-ver and out.",
+      "animation": "meme_surprise"
+    }
   ],
-  "dynamic": []
+  "dynamic": [
+    {
+      "trigger": "lol",
+      "response": "That joke slayed! Meow!",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "wow",
+      "response": "Mind blown! \ud83d\udc31",
+      "animation": "meme_surprise"
+    }
+  ]
 }

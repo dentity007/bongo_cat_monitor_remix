@@ -7,3 +7,4 @@ textblob
 fastapi
 uvicorn
 python-dotenv  # For env vars later
+praw
