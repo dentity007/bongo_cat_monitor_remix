@@ -41,9 +41,9 @@ imgflip = ImgflipIntegration()
 ```
 
 **Methods:**
-- `fetch_trends(limit=10)`: Fetch trending memes from Imgflip
+- `fetch_trends(limit=20)`: Fetch top 20 trending memes from Imgflip API
 - `generate_triggers(trends)`: Convert memes to triggers
-- `update_dynamic_triggers()`: Refresh dynamic trigger list
+- `update_dynamic_triggers()`: Refresh dynamic trigger list (runs daily at midnight)
 - `fallback_mode()`: Enable static-only mode if API fails
 
 #### `SerialCommunicator`
@@ -188,7 +188,10 @@ Get system status
 {
   "esp32_connected": true,
   "imgflip_connected": true,
-  "active_triggers": 15,
+  "active_triggers": 21,
+  "static_triggers": 1,
+  "dynamic_triggers": 20,
+  "last_update": "2025-09-17T00:00:00Z",
   "uptime": 3600
 }
 ```
@@ -243,7 +246,8 @@ Test trigger without ESP32
 ### Imgflip API
 - **Requests**: No rate limiting (free API)
 - **Reliability**: 99.9% uptime
-- **Dynamic trigger updates**: Every 1 hour (configurable)
+- **Dynamic trigger updates**: Daily at midnight (00:00)
+- **Startup updates**: Triggers refresh on application launch
 - **Fallback**: Automatic fallback to static triggers on API failure
 
 ### Serial Communication

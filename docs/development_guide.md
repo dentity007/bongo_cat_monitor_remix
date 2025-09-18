@@ -45,7 +45,7 @@ def main():
     # Main processing loop
     while True:
         check_triggers()
-        update_imgflip_triggers()  # If enabled
+        schedule.run_pending()  # Check for scheduled updates (daily at midnight)
         process_serial_commands()
         time.sleep(0.1)
 ```
@@ -68,20 +68,33 @@ Pre-configured triggers stored in `triggers.json`:
 ```
 
 #### Dynamic Triggers
-Imgflip-powered triggers that update automatically:
+Imgflip-powered triggers that update **daily at midnight** (top 20 trending memes):
 ```json
 {
   "dynamic": [
     {
-      "trigger": "trending_word",
-      "response": "Hot take: [trending content]",
+      "trigger": "drake",
+      "response": "Viral: Drake Hotline Bling—cat's got the meme! 😂",
       "animation": "meme_surprise",
       "source": "imgflip",
       "score": 150
+    },
+    {
+      "trigger": "bernie",
+      "response": "Viral: Bernie I Am Once Again Asking For Your Support—cat's got the meme! 😂",
+      "animation": "meme_surprise",
+      "source": "imgflip",
+      "score": 145
     }
+    // ... 18 more trending meme triggers
   ]
 }
 ```
+
+**Update Schedule:**
+- **Daily**: Midnight (00:00) - Full refresh of 20 trending memes
+- **Startup**: Immediate update when application launches
+- **Fallback**: Static triggers remain if API unavailable
 
 ### 3. ESP32 Firmware
 

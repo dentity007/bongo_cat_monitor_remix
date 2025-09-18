@@ -131,7 +131,7 @@ def update_triggers():
 
             # Create dynamic triggers from top memes (super fast!)
             new_dynamic = []
-            for meme in data[:10]:  # Get top 10 memes
+            for meme in data[:20]:  # Get top 20 memes
                 # Use first word of meme name as trigger
                 trigger_word = meme['name'].lower().split()[0]
                 # Create fun response with meme name

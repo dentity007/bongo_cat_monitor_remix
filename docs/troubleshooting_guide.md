@@ -199,11 +199,21 @@ with keyboard.Listener(on_press=on_press) as listener:
 
 #### Issue: Dynamic Triggers Not Updating
 **Symptoms:**
-- Static triggers work, but Imgflip triggers don't appear
+- Static triggers work, but only 1 trigger appears (should be 21 total: 1 static + 20 dynamic)
 - No new triggers added from Imgflip API
+- Triggers haven't updated recently
 
 **Solutions:**
-1. **Check Imgflip API Access**
+1. **Check Update Schedule**
+   - Triggers update **daily at midnight (00:00)**
+   - Triggers also update on **application startup**
+   - Check system time to see when last update occurred
+
+2. **Force Update on Startup**
+   - Restart the application to trigger immediate update
+   - Look for "✅ Imgflip trends loaded:" message with 20 trigger words
+
+3. **Check Imgflip API Access**
 ```python
 # Test Imgflip API connection
 import requests
@@ -213,20 +223,29 @@ try:
     if response.status_code == 200:
         data = response.json()
         print(f"✅ Imgflip API working: {len(data['data']['memes'])} memes available")
+        print("Top 5 trending memes:")
+        for meme in data['data']['memes'][:5]:
+            print(f"- {meme['name']}")
     else:
         print(f"❌ API error: {response.status_code}")
 except Exception as e:
     print(f"❌ Connection failed: {e}")
 ```
 
-2. **Verify API Response Format**
+4. **Verify Trigger Count**
 ```python
-# Check API response structure
-response = requests.get('https://api.imgflip.com/get_memes')
-data = response.json()
-print("Available memes:")
-for meme in data['data']['memes'][:5]:
-    print(f"- {meme['name']} (ID: {meme['id']})")
+# Check current trigger counts
+import json
+with open('triggers.json', 'r') as f:
+    triggers = json.load(f)
+
+static_count = len(triggers.get('static', []))
+dynamic_count = len(triggers.get('dynamic', []))
+
+print(f"Static triggers: {static_count}")
+print(f"Dynamic triggers: {dynamic_count}")
+print(f"Total triggers: {static_count + dynamic_count}")
+print("Expected: 1 static + 20 dynamic = 21 total")
 ```
 
 3. **Check Update Frequency**

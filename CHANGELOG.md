@@ -1,5 +1,39 @@
 # CatJAM Monitor Changelog
 
+## [v2.1.0] - 2025-09-17 - Enhanced Trigger System & Daily Updates
+
+### 🎯 Trigger System Enhancements
+- **Increased Dynamic Triggers**: Expanded from 10 to 20 trending meme triggers
+  - **Total Triggers**: Now 21 total (1 static + 20 dynamic)
+  - **More Variety**: Double the meme triggers for enhanced user experience
+  - **Trending Content**: Access to top 20 viral memes from Imgflip
+
+### ⏰ Automated Update System
+- **Daily Updates**: Triggers now refresh automatically at midnight (00:00)
+- **Startup Updates**: Immediate trigger refresh when application launches
+- **Scheduled Tasks**: Implemented `schedule` library for reliable daily updates
+- **Fresh Content**: Always current with latest trending memes
+
+### 📊 New Dynamic Triggers Added
+- `gru's` → Gru's Plan meme
+- `waiting` → Waiting Skeleton meme
+- `always` → Always Has Been meme
+- `change` → Change My Mind meme
+- `anakin` → Anakin Padme 4 Panel meme
+- `batman` → Batman Slapping Robin meme
+- `mocking` → Mocking Spongebob meme
+- `marked` → Marked Safe From meme
+- `x,` → X, X Everywhere meme
+- `woman` → Woman Yelling At Cat meme
+
+### 🔧 Technical Improvements
+- **Update Frequency**: Changed from potential hourly updates to daily midnight schedule
+- **Resource Optimization**: Reduced API calls while maintaining fresh content
+- **Error Handling**: Enhanced fallback system for update failures
+- **Performance**: Maintained sub-1-second loading with increased trigger count
+
+---
+
 ## [v2.0.0] - 2025-09-17 - Major API Migration & Performance Overhaul
 
 ### 🚀 Major Changes

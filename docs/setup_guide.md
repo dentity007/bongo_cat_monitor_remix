@@ -93,14 +93,16 @@ The Imgflip API integration requires **no authentication** and works out of the 
 4. **Reliable Service** - 99.9% uptime with robust fallback system
 
 #### Dynamic Triggers Available
-Once running, you'll have access to trending memes:
+Once running, you'll have access to **20 trending memes** that update **daily at midnight**:
 - `drake` → Drake Hotline Bling reaction
 - `bernie` → Bernie Sanders "I am once again asking"
 - `epic` → Epic Handshake celebration
 - `disaster` → Disaster Girl meme
-- And many more viral memes!
+- `gru's` → Gru's Plan meme
+- `batman` → Batman Slapping Robin meme
+- And 14 more viral memes updated automatically!
 
-**Note**: If Imgflip API is unavailable, the app continues working with static triggers only.
+**Note**: Triggers update daily at midnight and on application startup. If Imgflip API is unavailable, the app continues working with static triggers only.
 
 ### Step 5: Test Installation
 
@@ -120,10 +122,12 @@ python main.py --mode normal
 
 #### Test Triggers
 - Type "bullet" → Should trigger Top Gun response
-- Type "lol" → Should trigger "That joke slayed! Meow!"
 - Type "drake" → Should trigger Drake Hotline Bling meme
 - Type "bernie" → Should trigger Bernie Sanders meme
 - Type "epic" → Should trigger Epic Handshake meme
+- Type "batman" → Should trigger Batman Slapping Robin meme
+- Type "gru's" → Should trigger Gru's Plan meme
+- And 15 more dynamic triggers updated daily!
 
 ## Configuration Options
 

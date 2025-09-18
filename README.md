@@ -15,8 +15,9 @@ Transform your desk into an interactive meme factory with this enhanced Bongo Ca
 - **Cross-platform Support** - Works on Windows, macOS, and Linux
 
 ### 🚀 Advanced Features
-- **Dynamic Imgflip Triggers** - Automatically fetches trending memes from Imgflip API (30x faster than Reddit!)
+- **Dynamic Imgflip Triggers** - Automatically fetches top 20 trending memes daily (30x faster than Reddit!)
 - **Static Custom Triggers** - Pre-configured meme responses
+- **Daily Updates** - Fresh meme triggers updated every midnight
 - **Multiple Modes** - Normal, Messenger, and Tutor modes
 - **Fallback System** - Continues working even when API is unavailable
 - **Web Dashboard** - Optional web interface for configuration
@@ -77,12 +78,15 @@ The app works without any API configuration, but for dynamic triggers:
 2. **Automatic setup** - The app will automatically fetch trending memes on startup
 3. **Fast loading** - 30x faster than Reddit integration (loads in <1 second vs 10-30 seconds)
 
-**Dynamic triggers include:**
+**Dynamic triggers include (20 total, updated daily):**
 - "drake" → Drake Hotline Bling meme
 - "bernie" → Bernie Sanders "I am once again asking"
 - "epic" → Epic Handshake meme
 - "disaster" → Disaster Girl meme
-- And many more trending memes!
+- "gru's" → Gru's Plan meme
+- "batman" → Batman Slapping Robin meme
+- "anakin" → Anakin Padme 4 Panel meme
+- And 13 more trending memes updated daily at midnight!
 
 ### 4. ESP32 Setup
 1. Open `firmware/bongo_cat_monitor.ino` in Arduino IDE
@@ -97,7 +101,12 @@ python main.py --mode normal
 
 ### 6. Test Triggers
 - Type "bullet" → Top Gun reference!
-- Type "lol" → "That joke slayed! Meow!"
+- Type "drake" → Drake Hotline Bling meme
+- Type "bernie" → Bernie Sanders meme
+- Type "epic" → Epic Handshake celebration
+- Type "batman" → Batman Slapping Robin meme
+- Type "gru's" → Gru's Plan meme
+- And 15 more dynamic triggers updated daily!
 - Type "wow" → "Mind blown! 🐱"
 
 ## 📁 Project Structure

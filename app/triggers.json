@@ -56,6 +56,56 @@
       "trigger": "epic",
       "response": "Viral: Epic Handshake\u2014cat's got the meme! \ud83d\ude02",
       "animation": "meme_surprise"
+    },
+    {
+      "trigger": "gru's",
+      "response": "Viral: Gru's Plan\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "waiting",
+      "response": "Viral: Waiting Skeleton\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "always",
+      "response": "Viral: Always Has Been\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "change",
+      "response": "Viral: Change My Mind\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "anakin",
+      "response": "Viral: Anakin Padme 4 Panel\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "batman",
+      "response": "Viral: Batman Slapping Robin\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "mocking",
+      "response": "Viral: Mocking Spongebob\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "marked",
+      "response": "Viral: Marked Safe From\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "x,",
+      "response": "Viral: X, X Everywhere\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
+    },
+    {
+      "trigger": "woman",
+      "response": "Viral: Woman Yelling At Cat\u2014cat's got the meme! \ud83d\ude02",
+      "animation": "meme_surprise"
     }
   ]
 }
