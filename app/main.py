@@ -5,8 +5,11 @@ A Python application that monitors keyboard input and sends meme triggers to an 
 display. Features include static and dynamic triggers, Imgflip API integration for trending
 content, and real-time serial communication with hardware.
 
+This is a remix of Vostok Labs' Bongo Cat Monitor:
+https://github.com/vostoklabs/bongo_cat_monitor
+
 Author: dentity007
-Version: 1.0.0
+Version: 2.1.0
 Date: September 2025
 """
 

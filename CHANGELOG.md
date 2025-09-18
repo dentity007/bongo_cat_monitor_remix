@@ -26,11 +26,12 @@
 - `x,` → X, X Everywhere meme
 - `woman` → Woman Yelling At Cat meme
 
-### 🔧 Technical Improvements
-- **Update Frequency**: Changed from potential hourly updates to daily midnight schedule
-- **Resource Optimization**: Reduced API calls while maintaining fresh content
-- **Error Handling**: Enhanced fallback system for update failures
-- **Performance**: Maintained sub-1-second loading with increased trigger count
+### � Attribution & Licensing
+- **Proper Attribution**: Added comprehensive credits to original Vostok Labs project
+- **License Compliance**: Updated LICENSE.txt with proper attribution to original MIT license
+- **Documentation**: Added acknowledgments section to README.md
+- **Code Comments**: Added attribution headers to main.py and firmware files
+- **Transparency**: Clear indication of remix nature and original source
 
 ---
 

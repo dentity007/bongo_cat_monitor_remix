@@ -6,6 +6,12 @@
 
 Transform your desk into an interactive meme factory with this enhanced Bongo Cat monitor that responds to your typing with hilarious reactions, dynamic **Imgflip-powered triggers**, and customizable animations.
 
+## 🙏 Acknowledgments
+
+This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](https://github.com/vostoklabs/bongo_cat_monitor)** (MIT License). Huge thanks to them for the original firmware, animations, and ESP32 setup—I've built on their foundation with meme triggers, Imgflip integration, and enhanced documentation. Check their repo for the core magic!
+
+**Original License**: [MIT](https://github.com/vostoklabs/bongo_cat_monitor/blob/master/LICENSE.txt)
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
@@ -316,6 +322,8 @@ python3: command not found
 - 📚 **[Documentation](docs/)**: Complete technical documentation
 
 ---
+
+**Built on the foundation of [Vostok Labs' Bongo Cat Monitor](https://github.com/vostoklabs/bongo_cat_monitor)** - Check out the original project for the core ESP32 magic! 🎵
 
 **Made with ❤️ for the Bongo Cat community**
 

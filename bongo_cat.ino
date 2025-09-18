@@ -1,3 +1,19 @@
+/*
+ * Bongo Cat Monitor Firmware
+ *
+ * ESP32 firmware for the Bongo Cat Monitor - a remix with enhanced features
+ *
+ * Original project by Vostok Labs:
+ * https://github.com/vostoklabs/bongo_cat_monitor
+ *
+ * This remix adds meme triggers, improved animations, and enhanced functionality
+ * while building on the solid foundation provided by the original project.
+ *
+ * Author: dentity007 (remix)
+ * Original: Vostok Labs
+ * License: MIT
+ */
+
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include <WiFi.h>
