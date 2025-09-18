@@ -1,6 +1,35 @@
+/**
+ * Bongo Cat Electron Application - Main Process
+ *
+ * Main Electron process that manages the application lifecycle, window creation,
+ * system tray functionality, and inter-process communication between the main
+ * process and renderer process.
+ *
+ * Features:
+ * - Cross-platform desktop application
+ * - System tray integration
+ * - Serial communication with ESP32
+ * - Keyboard monitoring
+ * - System monitoring
+ * - Settings management
+ *
+ * Architecture:
+ * - Main Process: Node.js environment with full system access
+ * - Renderer Process: Browser environment (isolated for security)
+ * - IPC Communication: Secure communication between processes
+ *
+ * Author: dentity007
+ * Version: 1.0.0
+ * Date: September 2025
+ */
+
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
+
+// =============================================================================
+// MODULE IMPORTS
+// =============================================================================
 
 // Import our custom modules
 const SettingsManager = require('./src/settings');
@@ -8,9 +37,14 @@ const ESP32SerialManager = require('./src/serial');
 const SystemMonitor = require('./src/system-monitor');
 const KeyboardMonitor = require('./src/keyboard-monitor');
 
+// =============================================================================
+// GLOBAL VARIABLES AND STATE
+// =============================================================================
+
+// Development mode flag
 const isDev = process.argv.includes('--dev');
 
-// Keep a global reference of the window object
+// Keep a global reference of the window object (prevents garbage collection)
 let mainWindow;
 let tray;
 let isQuitting = false;
@@ -30,8 +64,16 @@ if (isDev) {
   console.log('Running in development mode');
 }
 
+// =============================================================================
+// WINDOW MANAGEMENT
+// =============================================================================
+
+/**
+ * Create the main application window
+ * Sets up browser window with security best practices and platform-specific features
+ */
 function createWindow() {
-  // Create the browser window
+  // Create the browser window with security-focused configuration
   mainWindow = new BrowserWindow({
     width: 400,
     height: 600,
@@ -40,33 +82,33 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false, // Security: disable node integration
       contextIsolation: true, // Security: enable context isolation
-      preload: path.join(__dirname, 'preload.js'), // Use preload script
+      preload: path.join(__dirname, 'preload.js'), // Use preload script for secure API
       enableRemoteModule: false // Security: disable remote module
     },
     icon: path.join(__dirname, 'assets', 'icons', 'icon.png'),
-    show: false, // Don't show until ready
+    show: false, // Don't show until ready to prevent visual flash
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default'
   });
 
-  // Load the app
+  // Load the main application interface
   mainWindow.loadFile('renderer/index.html');
 
   // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    
-    // Open DevTools in development
+
+    // Open DevTools in development mode for debugging
     if (isDev) {
       mainWindow.webContents.openDevTools();
     }
   });
 
-  // Handle window closed
+  // Handle window closed event
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
-  // Handle window close (minimize to tray instead of quit)
+  // Handle window close (minimize to tray instead of quit on macOS)
   mainWindow.on('close', (event) => {
     if (!isQuitting && process.platform === 'darwin') {
       event.preventDefault();
@@ -74,7 +116,7 @@ function createWindow() {
     }
   });
 
-  // Handle window minimize (hide on Mac)
+  // Handle window minimize (hide on macOS)
   mainWindow.on('minimize', (event) => {
     if (process.platform === 'darwin') {
       event.preventDefault();
@@ -83,13 +125,21 @@ function createWindow() {
   });
 }
 
+// =============================================================================
+// SYSTEM TRAY MANAGEMENT
+// =============================================================================
+
+/**
+ * Create system tray icon and context menu
+ * Provides quick access to application functions from system tray
+ */
 function createTray() {
-  // Create tray icon
+  // Create tray icon from asset file
   const iconPath = path.join(__dirname, 'assets', 'icons', 'tray.png');
   const trayIcon = nativeImage.createFromPath(iconPath);
   tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
 
-  // Create context menu
+  // Create context menu with application controls
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Show Bongo Cat',
