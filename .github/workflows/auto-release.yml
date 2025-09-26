@@ -1,0 +1,55 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install semantic-release
+      run: npm install -g semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/github
+
+    - name: Run semantic-release
+      run: npx semantic-release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get release version
+      id: get_version
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Update VERSION.txt
+      run: |
+        echo "${{ steps.get_version.outputs.version }}" > VERSION.txt
+
+    - name: Commit version update
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add VERSION.txt
+        git commit -m "chore: update version to ${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
+
+    - name: Push version update
+      run: git push
+      if: success()

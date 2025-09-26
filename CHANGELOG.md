@@ -1,5 +1,34 @@
 # CatJAM Monitor Changelog
 
+## [Unreleased]
+
+### Added
+- Initial release of Bongo Cat Monitor Remix
+- ESP32-based display system with LVGL graphics
+- Python desktop monitoring application
+- Electron cross-platform wrapper
+- Modular Arduino code architecture
+- Comprehensive documentation and setup guides
+
+### Fixed
+- ESP32 platform.txt corruption causing build failures
+- Cleaned bloated Python dependencies (reduced from 71 to 6 packages)
+- Updated Electron from v28 to v33.2.1 for security fixes
+- Corrected README.md paths and documentation
+- Modularized monolithic Arduino code into maintainable components
+
+### Changed
+- Refactored Arduino code from 1043-line monolithic file to modular structure
+- Streamlined Python dependencies to essential packages only
+- Updated build tools and configurations
+
+### Technical Details
+- ESP32 Arduino Core v2.0.17 with corrected platform.txt
+- Python 3.9+ with minimal pinned dependencies
+- Electron v33.2.1 with electron-builder v26.0.12
+- LVGL v8.x graphics library integration
+- GitHub Actions CI/CD with semantic-release automation
+
 ## [v2.1.0] - 2025-09-17 - Enhanced Trigger System & Daily Updates
 
 ### 🎯 Trigger System Enhancements
