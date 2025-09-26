@@ -14,6 +14,10 @@ This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](http
 
 **Original License**: [MIT](https://github.com/vostoklabs/bongo_cat_monitor/blob/master/LICENSE.txt)
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for development setup, coding standards, and repository hygiene guidelines.
+
 ## ✨ Features
 
 ### 🎯 Core Functionality
