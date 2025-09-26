@@ -1,3 +1,15 @@
+# [3.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v2.1.0...v3.0.0) (2025-09-26)
+
+
+### Features
+
+* replace hygiene workflow with banned paths guard ([42a6962](https://github.com/dentity007/bongo_cat_monitor_remix/commit/42a6962bfde1d4d1b866de391e52a823befeb8dd))
+
+
+### BREAKING CHANGES
+
+* Removes scheduled hygiene checks, now only guards against banned paths
+
 # [2.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v2.0.0...v2.1.0) (2025-09-26)
 
 
