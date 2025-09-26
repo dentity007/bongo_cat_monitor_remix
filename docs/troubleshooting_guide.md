@@ -1,5 +1,15 @@
 # CatJAM Monitor Troubleshooting Guide
 
+## Local development – keep the repo clean
+
+- Use a virtual environment for Python:  
+  `python -m venv .venv && source .venv/bin/activate` (Windows: `.venv\Scripts\activate`)
+- Install Node deps with `npm ci` (or `pnpm i --frozen-lockfile`) — but **do not commit** `node_modules/`.
+- Build/cached paths are ignored via `.gitignore`: `node_modules/`, `__pycache__/`, `dist/`, `build/`, `.venv/`, `.DS_Store`, etc.
+- If you accidentally track these, untrack them (they'll stay on your disk):  
+  `git rm -r --cached node_modules dist build __pycache__`
+- Before pushing, run `git status` — it should be clean of build or cache files.
+
 ## Common Issues and Solutions
 
 ### Python Environment Issues
