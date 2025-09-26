@@ -1,39 +1,3 @@
-# [2.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v2.0.0...v2.1.0) (2025-09-26)
-
-
-### Features
-
-* add automated repository hygiene workflow ([6d82e4c](https://github.com/dentity007/bongo_cat_monitor_remix/commit/6d82e4ce59e6ead5f537b6c2086937309022a41c))
-
-# [2.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v1.0.0...v2.0.0) (2025-09-26)
-
-
-### Features
-
-* add optional hardware temperature monitoring ([b66614d](https://github.com/dentity007/bongo_cat_monitor_remix/commit/b66614df7c69bf02dc68cb29b0da3268ac5356c2))
-
-
-### BREAKING CHANGES
-
-* New advanced settings require configuration file update
-
-# [1.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v0.4.0...v1.0.0) (2025-09-26)
-
-
-### Bug Fixes
-
-* update repository URL in package.json for semantic-release ([9e3cc53](https://github.com/dentity007/bongo_cat_monitor_remix/commit/9e3cc530154ad4e61a9b643b8cd4685194556bba))
-
-
-### Features
-
-* add automated semantic versioning and release workflow ([7582df3](https://github.com/dentity007/bongo_cat_monitor_remix/commit/7582df36606ec5dbf2f0a35f2554764c83dabec5))
-
-
-### BREAKING CHANGES
-
-* Automated release system now manages version numbers
-
 # CatJAM Monitor Changelog
 
 ## [Unreleased]
@@ -48,6 +12,18 @@
 - **Hardware temperature monitoring** (optional, Windows-only) - CPU/GPU temperature display
 - LibreHardwareMonitor integration for real-time hardware sensors
 - Advanced settings tab with hardware monitoring controls
+- Automated semantic versioning and release workflow
+- Repository hygiene guard to prevent accidental artifact commits
+- Credits to chriss158 for original hardware monitoring implementation
+
+### Changed
+- Updated Electron to v33.2.1 for security improvements
+- Modularized Arduino firmware into logical components
+- Cleaned up dependencies and removed unused packages
+
+### Fixed
+- Repository URL references in package.json
+- Build artifact cleanup and .gitignore improvements
 
 ### Fixed
 - ESP32 platform.txt corruption causing build failures
