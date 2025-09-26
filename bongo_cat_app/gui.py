@@ -812,6 +812,9 @@ class BongoCatSettingsGUI:
         
         # Hardware monitoring section
         self._build_hardware_monitoring_section(main_frame)
+        
+        # Resilience telemetry section
+        self._build_resilience_telemetry_section(main_frame)
 
     def _build_hardware_monitoring_section(self, parent):
         self._cfg = getattr(self, "_cfg", settings.load())
@@ -912,6 +915,52 @@ class BongoCatSettingsGUI:
         msg += "\n\nNote: App is {}elevated.".format("" if is_admin_windows() else "NOT ")
 
         messagebox.showinfo("Test sensors", msg)
+
+    def _build_resilience_telemetry_section(self, parent):
+        """Build the resilience telemetry section"""
+        from resilience import TELEMETRY
+        
+        frm = tk.LabelFrame(parent, text="Resilience Telemetry")
+        frm.pack(fill="x", pady=6)
+        
+        # Get current telemetry
+        telemetry = TELEMETRY.snapshot()
+        
+        # Create a text widget to display telemetry
+        text_widget = tk.Text(frm, height=8, width=50, font=('TkDefaultFont', 9))
+        text_widget.pack(padx=8, pady=8, fill="both", expand=True)
+        
+        # Format telemetry data
+        telemetry_text = "API Resilience Metrics:\n"
+        telemetry_text += f"Cache Hits: {telemetry.get('cache_hits', 0)}\n"
+        telemetry_text += f"Cache Stale Hits: {telemetry.get('cache_stale_hits', 0)}\n"
+        telemetry_text += f"Cache Misses: {telemetry.get('cache_misses', 0)}\n"
+        telemetry_text += f"Network Success: {telemetry.get('fetch_success', 0)}\n"
+        telemetry_text += f"Network Failures: {telemetry.get('fetch_fail', 0)}\n"
+        telemetry_text += f"Circuit Breaker Opens: {telemetry.get('cb_open', 0)}\n"
+        telemetry_text += f"Circuit Breaker Closes: {telemetry.get('cb_close', 0)}\n"
+        
+        text_widget.insert("1.0", telemetry_text)
+        text_widget.config(state="disabled")  # Make it read-only
+        
+        # Refresh button
+        def refresh_telemetry():
+            telemetry = TELEMETRY.snapshot()
+            telemetry_text = "API Resilience Metrics:\n"
+            telemetry_text += f"Cache Hits: {telemetry.get('cache_hits', 0)}\n"
+            telemetry_text += f"Cache Stale Hits: {telemetry.get('cache_stale_hits', 0)}\n"
+            telemetry_text += f"Cache Misses: {telemetry.get('cache_misses', 0)}\n"
+            telemetry_text += f"Network Success: {telemetry.get('fetch_success', 0)}\n"
+            telemetry_text += f"Network Failures: {telemetry.get('fetch_fail', 0)}\n"
+            telemetry_text += f"Circuit Breaker Opens: {telemetry.get('cb_open', 0)}\n"
+            telemetry_text += f"Circuit Breaker Closes: {telemetry.get('cb_close', 0)}\n"
+            
+            text_widget.config(state="normal")
+            text_widget.delete("1.0", "end")
+            text_widget.insert("1.0", telemetry_text)
+            text_widget.config(state="disabled")
+        
+        tk.Button(frm, text="Refresh", command=refresh_telemetry).pack(anchor="w", padx=8, pady=(0, 8))
 
 def main():
     """Test the settings GUI independently"""
