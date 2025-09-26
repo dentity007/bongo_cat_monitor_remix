@@ -575,6 +575,156 @@ source venv/bin/activate
 cd app && pip install -r requirements.txt
 ```
 
+### Hardware Monitoring Issues
+
+#### Issue: Hardware Temperature Monitoring Not Working
+**Symptoms:**
+```
+Hardware sensors unavailable
+Test Sensors: Failed
+CPU/GPU temperature shows "N/A"
+```
+
+**Solutions:**
+1. **Check Consent Settings**
+   - Open Settings → Advanced tab
+   - Ensure "I consent to hardware temperature monitoring" is checked
+   - Ensure "Enable hardware temperature monitoring" is checked
+
+2. **Test Different Providers**
+   ```bash
+   # In Settings → Advanced, try different providers:
+   # - auto (recommended)
+   # - lhm_http (requires LibreHardwareMonitor running)
+   # - nvml (NVIDIA GPUs only, no admin needed)
+   ```
+
+3. **Install LibreHardwareMonitor (Windows)**
+   - Download from: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+   - Run as administrator
+   - Enable "Remote Web Server" in options (default port 8085)
+   - Select "lhm_http" provider in app settings
+
+4. **Check GPU Compatibility**
+   ```bash
+   # For NVIDIA GPUs, ensure nvml provider works
+   pip install nvidia-ml-py3
+   python -c "import nvidia_smi; nvidia_smi.nvmlInit(); print('NVML OK')"
+   ```
+
+5. **Verify Permissions**
+   - GPU-only mode works without admin rights
+   - CPU monitoring requires administrator privileges on Windows
+
+#### Issue: Circuit Breaker Keeps Disabling Sensors
+**Symptoms:**
+```
+Circuit breaker opened for hardware monitoring
+Hardware monitoring disabled due to repeated failures
+```
+
+**Solutions:**
+1. **Check Circuit Breaker State**
+   ```bash
+   # Circuit breaker state is stored in cache/cb_state.json
+   cat bongo_cat_app/cache/cb_state.json
+   ```
+
+2. **Reset Circuit Breaker**
+   - Stop the application
+   - Delete `bongo_cat_app/cache/cb_state.json`
+   - Restart the application
+
+3. **Check Sensor Stability**
+   - Run LibreHardwareMonitor manually to verify sensors work
+   - Test with different provider settings
+   - Ensure no other applications are accessing sensors simultaneously
+
+### API Resilience Issues
+
+#### Issue: Circuit Breaker Keeps Opening for External APIs
+**Symptoms:**
+```
+Circuit breaker opened for imgflip_templates
+Dynamic triggers not updating
+API calls failing repeatedly
+```
+
+**Solutions:**
+1. **Check Network Connectivity**
+   ```bash
+   # Test API connectivity
+   curl -I https://api.imgflip.com/get_memes
+   ping -c 3 api.imgflip.com
+   ```
+
+2. **Reset Circuit Breaker State**
+   ```bash
+   # Remove circuit breaker state file
+   rm bongo_cat_app/cache/cb_state.json
+   ```
+
+3. **Check API Response Times**
+   - Circuit breaker opens after 3 consecutive failures
+   - Each failure has 1.5 second timeout
+   - Automatic recovery attempts after 10 minutes
+
+4. **Monitor Circuit Breaker Logs**
+   ```bash
+   # Check application logs for circuit breaker events
+   grep "circuit_breaker\|CircuitBreaker" bongo_cat_app/logs/*.log
+   ```
+
+#### Issue: Cache Not Working Properly
+**Symptoms:**
+```
+Cache hit rate is 0%
+API calls not being cached
+Slow application startup
+```
+
+**Solutions:**
+1. **Check Cache Directory Permissions**
+   ```bash
+   ls -la bongo_cat_app/cache/
+   chmod 755 bongo_cat_app/cache/
+   ```
+
+2. **Clear Corrupted Cache**
+   ```bash
+   # Remove cache files to force fresh API calls
+   rm -rf bongo_cat_app/cache/
+   mkdir bongo_cat_app/cache/
+   ```
+
+3. **Verify Cache TTL Settings**
+   - API responses cached for 60 seconds by default
+   - Check `resilience.py` for TTL configuration
+   - Disk cache persists across application restarts
+
+#### Issue: Application Crashes on External API Failure
+**Symptoms:**
+```
+Application crashes when internet is unavailable
+No fallback to static triggers
+```
+
+**Solutions:**
+1. **Verify Fallback Implementation**
+   - Static triggers should always be available
+   - Check `triggers_external.py` for fallback logic
+   - Ensure `resilient_json` function handles failures gracefully
+
+2. **Test Offline Mode**
+   ```bash
+   # Disconnect internet and verify app still works
+   # Static triggers should remain functional
+   ```
+
+3. **Check Error Handling**
+   - All external API calls should be wrapped in resilience functions
+   - Verify `resilient_json` is used instead of direct `requests` calls
+
 ---
 
-*Troubleshooting Guide Version: 1.0.0 | Last Updated: September 17, 2025*
+*Troubleshooting Guide Version: 1.1.0 | Last Updated: September 26, 2025*

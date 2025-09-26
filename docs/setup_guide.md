@@ -177,13 +177,47 @@ python3 -m venv venv  # Recreate with Python 3
 - **Fallback mode** - App continues with static triggers if API fails
 - **Rate limiting** - Extremely rare, but app handles it gracefully
 
-#### Dynamic Triggers Not Working
-- Verify internet connection
-- Check console for "Imgflip trends loaded" message
-- App falls back to static triggers automatically
-- No manual configuration needed
+### Step 5: Hardware Temperature Monitoring (Optional - Windows Only)
 
-#### Virtual Environment Issues
+#### Prerequisites
+- **Windows 10/11** (required for hardware monitoring)
+- **Administrator privileges** (for LibreHardwareMonitor setup)
+
+#### LibreHardwareMonitor Setup
+1. **Download LibreHardwareMonitor**
+   - Visit: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases
+   - Download latest release (LibreHardwareMonitor-net472.zip)
+
+2. **Extract and Configure**
+   - Extract to a permanent location (e.g., `C:\Program Files\LibreHardwareMonitor`)
+   - Run `LibreHardwareMonitor.exe` as Administrator
+   - Go to `Options > Start Minimized`
+   - Go to `Options > Start with Windows`
+   - Go to `Options > Remote Web Server`
+   - Set port to `8085` and enable the web server
+
+3. **Verify Installation**
+   - Open browser to `http://localhost:8085`
+   - You should see JSON data with hardware temperatures
+
+#### Application Configuration
+1. **Enable Hardware Monitoring**
+   - Run the application
+   - Open settings GUI from system tray
+   - Check "Enable Hardware Monitoring"
+   - Grant consent when prompted
+   - Select preferred provider (LibreHardwareMonitor recommended)
+
+2. **Test Temperature Display**
+   - Type to trigger cat animations
+   - Temperatures should appear on ESP32 display
+   - Check console for "Hardware monitoring active" message
+
+#### Troubleshooting Hardware Monitoring
+- **No temperatures displayed**: Verify LibreHardwareMonitor is running and web server enabled
+- **Connection refused**: Check firewall settings and port 8085 availability
+- **NVML fallback**: If LibreHardwareMonitor fails, app automatically tries NVML for NVIDIA GPUs
+- **Consent required**: Hardware monitoring requires explicit user consent before enabling
 ```bash
 # Recreate virtual environment
 rm -rf venv

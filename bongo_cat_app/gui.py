@@ -11,6 +11,7 @@ from typing import Optional, Callable
 
 import settings
 from sensors import read_sensors, is_admin_windows
+from serial_proto import VersionIncompatible
 
 class BongoCatSettingsGUI:
     """Settings GUI for Bongo Cat application"""
@@ -603,7 +604,21 @@ class BongoCatSettingsGUI:
         if 'status_label' in self.widgets and self.config:
             config_file = self.config.config_file
             status_text = f"Configuration file: {config_file}"
+            
+            # Add firmware info if available
+            if self.engine and hasattr(self.engine, 'fw_info') and self.engine.fw_info:
+                fw_info = self.engine.fw_info
+                status_text += f" | Firmware: {fw_info['fw_ver']} CAP=0x{fw_info['cap']:08X}"
+            
             self.widgets['status_label'].config(text=status_text)
+    
+    def handle_version_incompatibility(self, error: VersionIncompatible):
+        """Handle version incompatibility with user warning"""
+        messagebox.showwarning("Protocol Version Mismatch",
+            f"Firmware and app major versions differ: {error}\n\n"
+            "The app will use legacy fallback mode.\n"
+            "Some features may be unavailable.\n\n"
+            "See docs/PROTOCOL.md for details.")
     
     def update_hardware_status(self):
         """Update hardware monitoring status display"""

@@ -1,0 +1,17 @@
+{
+  "test_failure": {
+    "state": "OPEN",
+    "fail_count": 2,
+    "open_since": 1758918559.6185741
+  },
+  "test": {
+    "state": "HALF_OPEN",
+    "fail_count": 1,
+    "open_since": 1758918559.622905
+  },
+  "test_api": {
+    "state": "CLOSED",
+    "fail_count": 1,
+    "open_since": 0.0
+  }
+}

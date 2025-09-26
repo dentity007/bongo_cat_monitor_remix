@@ -2,52 +2,172 @@
 
 ## Python API
 
-### Core Classes
+### Core Modules
 
-#### `CatJAMMonitor`
-Main application class that orchestrates all components.
+#### `main.py` - Application Entry Point
+Main application orchestrator with resilient initialization.
 
-**Initialization:**
-```python
-monitor = CatJAMMonitor(mode='normal', port=None)
+**Functions:**
+- `main()`: Parse arguments and start application
+- `setup_logging()`: Configure application logging
+- `initialize_components()`: Initialize all modules with error handling
+
+**Command Line Arguments:**
+```bash
+python main.py [options]
+
+Options:
+  --mode {normal,messenger,tutor}  Operation mode (default: normal)
+  --port PORT                     Serial port for ESP32 (auto-detect if not specified)
+  --debug                         Enable debug logging
 ```
 
-**Parameters:**
-- `mode` (str): Operation mode ('normal', 'messenger', 'tutor')
-- `port` (str): Serial port for ESP32 (auto-detect if None)
+#### `engine.py` - Core Engine
+BongoCatEngine class handling keyboard monitoring, serial communication, and animations.
 
-**Methods:**
-- `start()`: Begin monitoring and trigger processing
-- `stop()`: Stop all monitoring and cleanup
-- `add_trigger(trigger, response, animation)`: Add new trigger
-- `remove_trigger(trigger)`: Remove existing trigger
-
-#### `TriggerManager`
-Handles loading, validation, and matching of triggers.
-
-**Methods:**
-- `load_triggers()`: Load triggers from JSON files
-- `save_triggers()`: Save current triggers to disk
-- `find_match(text)`: Find trigger matches in text
-- `add_static_trigger(trigger, response, animation)`: Add static trigger
-- `add_dynamic_trigger(trigger, response, animation)`: Add dynamic trigger
-
-#### `ImgflipIntegration`
-Manages Imgflip API interactions for dynamic triggers.
-
-**Initialization:**
+**Class: `BongoCatEngine`**
 ```python
-imgflip = ImgflipIntegration()
+engine = BongoCatEngine(config=None)
+```
+
+**Key Methods:**
+- `start_monitoring()`: Begin keyboard monitoring and ESP32 communication
+- `stop_monitoring()`: Stop all monitoring threads
+- `on_key_press(key)`: Handle keystroke events
+- `send_animation_command(wpm, force_update=False)`: Send commands to ESP32
+- `apply_config_to_arduino()`: Update ESP32 with current configuration
+
+#### `settings.py` - Configuration Management
+JSON-based settings with consent validation.
+
+**Functions:**
+- `load() -> Dict[str, Any]`: Load settings from settings.json
+- `save(cfg: Dict[str, Any])`: Save settings to disk
+- `is_monitoring_allowed(cfg: Dict[str, Any]) -> bool`: Check if hardware monitoring is allowed
+
+**Settings Structure:**
+```json
+{
+  "telemetry": {
+    "hardware_monitoring_enabled": false,
+    "hardware_monitoring_consented": false,
+    "provider": "auto",
+    "gpu_only": true
+  },
+  "display": {
+    "show_cpu": true,
+    "show_ram": true,
+    "show_wpm": true,
+    "show_time": true,
+    "show_cpu_temp": false,
+    "show_gpu_temp": false
+  }
+}
+```
+
+#### `sensors.py` - Hardware Monitoring
+Multi-provider hardware temperature monitoring.
+
+**Functions:**
+- `read_sensors(cfg: Dict[str, Any]) -> Dict[str, Any]`: Read hardware sensors based on config
+- `read_lhm_http(url: str) -> Dict[str, Any]`: Read from LibreHardwareMonitor HTTP
+- `read_nvml_gpu_temp() -> Optional[float]`: Read NVIDIA GPU temperature
+- `summarize_lhm(tree: Dict[str, Any]) -> Dict[str, Optional[float]]`: Parse LHM JSON response
+
+**Supported Providers:**
+- `auto`: Automatic provider detection
+- `lhm_http`: LibreHardwareMonitor HTTP server
+- `nvml`: NVIDIA Management Library (GPU only)
+
+#### `resilience.py` - API Resilience Framework
+Enterprise-grade resilience patterns for external API calls.
+
+**Classes:**
+
+**`TTLCache`** - In-memory TTL cache with disk persistence
+```python
+cache = TTLCache()
+cache.put(key: str, value: Any)
+hit, value, stale = cache.get(key: str, ttl_s: int)
+```
+
+**`CircuitBreaker`** - Circuit breaker pattern implementation
+```python
+breaker = CircuitBreaker(name: str, fail_threshold: int = 3, open_window_s: int = 600)
+breaker.allow() -> bool  # Check if call should be attempted
+breaker.record_success()  # Record successful call
+breaker.record_failure()  # Record failed call
+```
+
+#### `sensors.py` - Hardware Monitoring
+Multi-provider hardware temperature monitoring with consent management.
+
+**Class: `HardwareMonitor`**
+```python
+monitor = HardwareMonitor(config)
+```
+
+**Key Features:**
+- Consent-gated hardware access
+- Multiple provider support (LibreHardwareMonitor, NVML)
+- Automatic provider fallback
+- Temperature data caching
+
+**Methods:**
+- `get_temperatures() -> Dict[str, float]`: Get current hardware temperatures
+- `is_consent_granted() -> bool`: Check if user has granted hardware monitoring consent
+- `request_consent() -> bool`: Request hardware monitoring consent from user
+- `test_provider(provider_name: str) -> bool`: Test specific hardware monitoring provider
+
+**Supported Providers:**
+- `libre`: LibreHardwareMonitor HTTP server
+- `nvml`: NVIDIA Management Library (NVML)
+
+#### `resilience.py` - API Resilience Framework
+Enterprise-grade API resilience with caching and circuit breaker patterns.
+
+**Class: `TTLCache`**
+```python
+cache = TTLCache(ttl_seconds=300)
 ```
 
 **Methods:**
-- `fetch_trends(limit=20)`: Fetch top 20 trending memes from Imgflip API
-- `generate_triggers(trends)`: Convert memes to triggers
-- `update_dynamic_triggers()`: Refresh dynamic trigger list (runs daily at midnight)
-- `fallback_mode()`: Enable static-only mode if API fails
+- `get(key) -> Any`: Get cached value if not expired
+- `set(key, value)`: Cache value with TTL
+- `clear()`: Clear all cached values
 
-#### `SerialCommunicator`
-Handles communication with ESP32 hardware.
+**Class: `CircuitBreaker`**
+```python
+breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60)
+```
+
+**Methods:**
+- `call(func, *args, **kwargs)`: Execute function with circuit breaker protection
+- `is_open() -> bool`: Check if circuit breaker is open
+- `reset()`: Reset circuit breaker state
+
+**Functions:**
+- `resilient_json(name, url, cache_key, ttl_s, local_fallback_fn, non_blocking=True)`: Make resilient API call
+- `fetch_json_with_retries(url, timeout_s=1.5, attempts=3)`: HTTP request with retries
+Imgflip API integration with resilience patterns.
+
+**Functions:**
+- `get_memes(non_blocking=True) -> Tuple[Dict, Dict]`: Fetch trending memes with resilience
+- `extract_template_names(resp: Dict) -> List[str]`: Extract meme names from API response
+
+#### `gui.py` - Settings Interface
+Tkinter-based GUI with hardware monitoring controls.
+
+**Class: `SettingsGUI`**
+```python
+gui = SettingsGUI(config, on_config_change_callback)
+```
+
+**Key Features:**
+- Hardware monitoring consent dialog
+- Sensor testing interface
+- Real-time configuration updates
+- Provider selection and testing
 
 **Methods:**
 - `connect(port)`: Establish serial connection
@@ -66,14 +186,27 @@ Handles communication with ESP32 hardware.
 }
 ```
 
-#### Configuration Object
+#### Hardware Monitoring Data
 ```python
 {
-  "static_triggers": [...],
-  "dynamic_triggers": [...],
-  "imgflip_enabled": true,
-  "serial_port": "auto",
-  "update_interval": 3600
+  "temperatures": {
+    "cpu": 45.5,
+    "gpu": 62.3,
+    "memory": 38.7
+  },
+  "provider": "libre",
+  "last_updated": "2025-09-17T22:00:00Z",
+  "consent_granted": true
+}
+```
+
+#### Resilience Status
+```python
+{
+  "circuit_breaker_state": "closed",
+  "cache_entries": 15,
+  "last_api_call": "2025-09-17T22:00:00Z",
+  "failure_count": 0
 }
 ```
 
@@ -234,6 +367,11 @@ Test trigger without ESP32
 - `ERR_IMGFLIP_API`: Imgflip API request failed
 - `ERR_TRIGGER_LOAD`: Cannot load trigger configuration
 - `ERR_CONFIG_SAVE`: Cannot save configuration changes
+- `ERR_HARDWARE_MONITORING`: Hardware monitoring initialization failed
+- `ERR_CONSENT_DENIED`: User denied hardware monitoring consent
+- `ERR_PROVIDER_UNAVAILABLE`: Hardware monitoring provider not available
+- `ERR_CIRCUIT_BREAKER_OPEN`: API circuit breaker is open
+- `ERR_CACHE_MISS`: Required cached data not available
 
 ### ESP32 Firmware
 - `ERR_DISPLAY_INIT`: Display initialization failed
@@ -249,6 +387,12 @@ Test trigger without ESP32
 - **Dynamic trigger updates**: Daily at midnight (00:00)
 - **Startup updates**: Triggers refresh on application launch
 - **Fallback**: Automatic fallback to static triggers on API failure
+
+### Hardware Monitoring
+- **LibreHardwareMonitor**: Local HTTP server, no rate limiting
+- **NVML**: GPU polling interval minimum 1 second
+- **Temperature updates**: Configurable interval (default 5 seconds)
+- **Consent checks**: Performed once per session
 
 ### Serial Communication
 - **Baud rate**: 115200
@@ -288,22 +432,33 @@ Test trigger without ESP32
 ```env
 # Optional: For future API integrations
 # IMGFLIP_API_KEY=your_api_key_here
-# Custom configuration options
-DEBUG_MODE=false
-LOG_LEVEL=INFO
-```
 
 # Application Settings
 DEBUG_MODE=false
 LOG_LEVEL=INFO
 UPDATE_INTERVAL=3600
 
+# Hardware Monitoring Settings
+HARDWARE_MONITORING_ENABLED=false
+LIBRE_HARDWARE_MONITOR_URL=http://localhost:8085
+NVML_ENABLED=true
+TEMPERATURE_THRESHOLD=80.0
+HARDWARE_UPDATE_INTERVAL=5
+
+# Resilience Settings
+CACHE_TTL_SECONDS=300
+CIRCUIT_BREAKER_THRESHOLD=5
+CIRCUIT_BREAKER_TIMEOUT=60
+API_TIMEOUT_SECONDS=1.5
+MAX_API_RETRIES=3
+
 # Hardware Settings
 SERIAL_PORT=auto
 DISPLAY_WIDTH=240
 DISPLAY_HEIGHT=320
 ```
+```
 
 ---
 
-*API Version: 1.0.0 | Last Updated: September 17, 2025*
+*API Version: 1.1.0 | Last Updated: September 17, 2025*
