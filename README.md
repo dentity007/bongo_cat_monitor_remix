@@ -27,7 +27,8 @@ This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](http
 - **Static Custom Triggers** - Pre-configured meme responses
 - **Daily Updates** - Fresh meme triggers updated every midnight
 - **Multiple Modes** - Normal, Messenger, and Tutor modes
-- **Fallback System** - Continues working even when API is unavailable
+- **API Resilience Framework** - Circuit breaker pattern with TTL caching for robust external API handling
+- **Fallback System** - Continues working even when APIs are unavailable
 - **Web Dashboard** - Optional web interface for configuration
 - **Serial Communication** - Robust ESP32 connectivity
 - **Hardware Temperature Monitoring** - Optional CPU/GPU temperature display (Windows only)
@@ -44,6 +45,7 @@ This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](http
 |----------|-------------|------|
 | **Setup Guide** | Complete installation and hardware setup | [📖 Setup Guide](docs/setup_guide.md) |
 | **API Reference** | Technical documentation for developers | [🔧 API Reference](docs/api_reference.md) |
+| **Serial Protocol v2** | ESP32 communication protocol specification | [🔌 Serial Protocol](docs/PROTOCOL.md) |
 | **Development Guide** | Architecture, testing, and contribution guidelines | [👨‍💻 Development Guide](docs/development_guide.md) |
 | **Troubleshooting** | Common issues and solutions | [🔍 Troubleshooting Guide](docs/troubleshooting_guide.md) |
 | **Style Guide** | Coding standards and best practices | [📋 Style Guide](docs/style_guide.md) |
@@ -103,11 +105,11 @@ The app works without any API configuration, but for dynamic triggers:
 3. Upload to your ESP32 board
 
 ### 5. Hardware Monitoring Setup (Optional - Windows Only)
-For advanced CPU/GPU temperature monitoring with privacy protection:
+For advanced CPU/GPU temperature monitoring with privacy protection and API resilience:
 
 1. **Install Python dependencies**:
    ```bash
-   pip install -r bongo_cat_app/requirements_hardware.txt
+   pip install -r bongo_cat_app/requirements_app.txt
    ```
 
 2. **Enable in settings** (requires explicit consent):
@@ -124,24 +126,55 @@ For advanced CPU/GPU temperature monitoring with privacy protection:
 - ✅ **Least privilege**: GPU-only mode doesn't require admin rights
 - ✅ **Local only**: No data is transmitted externally
 - ✅ **Test before use**: Verify sensor connectivity works
+- ✅ **API Resilience**: Circuit breaker pattern prevents app crashes from sensor failures
 
 **Supported Providers**:
 - **auto**: Automatically detects best available provider
-- **lhm_http**: LibreHardwareMonitor (requires admin for CPU)
+- **lhm_http**: LibreHardwareMonitor (requires admin for CPU, runs as separate process)
 - **nvml**: NVIDIA Management Library (GPU-only, no admin needed)
+
+**API Resilience Features**:
+- **TTL Caching**: Sensor data cached for 60 seconds to reduce polling overhead
+- **Circuit Breaker**: Automatically disables monitoring after repeated failures
+- **Automatic Recovery**: Attempts to re-enable monitoring after cooldown period
+- **Fallback Values**: Shows "N/A" instead of crashing when sensors unavailable
 
 **Troubleshooting**:
 - If "Test Sensors" fails, try different provider or check permissions
 - GPU-only mode works without administrator privileges
 - CPU monitoring requires admin rights on Windows
+- Check logs for circuit breaker state and cache hit/miss ratios
 
-### 6. Run the App
+### 6. API Resilience Features
+The application includes enterprise-grade resilience patterns to ensure reliable operation:
+
+**Circuit Breaker Pattern**:
+- Automatically disables external API calls after repeated failures
+- Prevents app crashes from network issues or API downtime
+- Automatically attempts recovery after cooldown period
+
+**TTL Caching System**:
+- Caches API responses for 60 seconds to reduce network load
+- Falls back to stale data when fresh data unavailable
+- Persists cache to disk for faster startup
+
+**Fallback Mechanisms**:
+- Static triggers always available when dynamic API fails
+- Graceful degradation maintains core functionality
+- Comprehensive error handling prevents crashes
+
+**Monitoring & Telemetry**:
+- Built-in metrics for cache hits/misses, API success/failure rates
+- Circuit breaker state monitoring
+- Debug logging for troubleshooting
+
+### 7. Run the App
 ```bash
 cd app
 python main.py --mode normal
 ```
 
-### 6. Test Triggers
+### 8. Test Triggers
 - Type "bullet" → Top Gun reference!
 - Type "drake" → Drake Hotline Bling meme
 - Type "bernie" → Bernie Sanders meme
@@ -155,20 +188,31 @@ python main.py --mode normal
 
 ```
 bongo_cat_monitor_remix/
-├── 📁 app/                          # Desktop application
-│   ├── 📄 main.py                   # Main Python application
-│   ├── 📄 requirements.txt          # Python dependencies
-│   ├── 📄 triggers.json             # Static & dynamic triggers
-│   ├── 📄 trusted_triggers.json     # Verified triggers
-│   ├── 📄 test_reddit.py            # Reddit auth testing
-│   ├── 📄 .env                      # Environment variables (Git-ignored)
-│   ├── 📁 dashboard/                # Web dashboard (future)
-│   └── 📁 venv/                     # Virtual environment
+├── 📁 bongo_cat_app/                # Desktop application (Python)
+│   ├── 📄 main.py                   # Application entry point with resilient initialization
+│   ├── 📄 engine.py                 # Core functionality (keyboard monitoring, serial comms)
+│   ├── 📄 gui.py                    # Settings interface with hardware monitoring UI
+│   ├── 📄 tray.py                   # System tray integration
+│   ├── 📄 settings.py               # JSON-based configuration with consent validation
+│   ├── 📄 sensors.py                # Hardware monitoring (CPU/GPU temperature)
+│   ├── 📄 resilience.py             # API resilience (TTL cache, circuit breaker)
+│   ├── 📄 triggers_external.py      # External API integration with fallbacks
+│   ├── 📄 config.py                 # Legacy configuration (being phased out)
+│   ├── 📄 requirements_app.txt      # Full application dependencies
+│   ├── 📄 requirements_minimal.txt  # Minimal runtime dependencies
+│   ├── 📄 default_config.json       # Default application settings
+│   ├── 📁 cache/                    # API response cache directory
+│   ├── 📁 tests/                    # Unit tests for resilience features
+│   │   └── � test_resilience.py    # Comprehensive test suite
+│   └── 📁 assets/                   # Application assets (icons, etc.)
 ├── 📁 firmware/                     # ESP32 firmware
 │   └── 📄 bongo_cat_monitor.ino     # Arduino sketch
-├── 📁 animations/                   # Animation assets
+├── 📁 animations/                   # Animation assets and guidelines
+├── 📁 Sprites/                      # Sprite assets for ESP32
 ├── 📁 docs/                         # Documentation
-├── 📁 3d_files/                     # 3D printing files
+├── 📁 3d_printing/                  # 3D printing files for ESP32 case
+├── 📁 bongo-cat-electron/           # Electron-based desktop app (alternative)
+├── 📁 bongo-cat-website/            # Web-based release downloads
 ├── 📄 README.md                     # This file
 ├── 📄 .gitignore                    # Git ignore rules
 └── 📄 LICENSE.txt                   # MIT License
@@ -275,6 +319,7 @@ Type these words to trigger viral memes:
 - **Display**: 2.4" ILI9341 TFT LCD (240x320 resolution)
 - **Communication**: Serial at 115200 baud
 - **Commands**: `MEME:response|animation` format
+- **Protocol**: See [Serial Protocol v2](docs/PROTOCOL.md)
 - **Libraries**: TFT_eSPI, LVGL 8.x
 
 ## 📊 API Reference

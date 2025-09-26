@@ -9,10 +9,19 @@ import serial
 import serial.tools.list_ports
 import threading
 from collections import deque
-from pynput import keyboard
+try:
+    from pynput import keyboard
+    PYNPUT_AVAILABLE = True
+except ImportError:
+    PYNPUT_AVAILABLE = False
+    print("⚠️ pynput not available - keyboard monitoring disabled")
 import sys
 import platform
 import psutil
+import logging
+
+# Import new serial protocol
+from serial_proto import hello, VersionIncompatible, set_mode, trigger, send_temps
 import datetime
 from typing import Callable, Optional, Dict, Any
 
@@ -243,7 +252,7 @@ class BongoCatEngine:
                 return esp32_ports[0].device
 
     def connect_serial(self, retries=3):
-        """Connect to ESP32 via serial with retry logic - EXACT ORIGINAL IMPLEMENTATION"""
+        """Connect to ESP32 via serial with version negotiation and safe degrade"""
         if self.port == 'AUTO' or not self.port:
             detected_port = self.find_esp32_port()
             if detected_port:
@@ -260,7 +269,6 @@ class BongoCatEngine:
                 
                 print(f"🔌 Connecting to {self.port}...")
                 # ESP32-optimized serial configuration to prevent freezes
-                # EXACT ORIGINAL: Simple serial connection like the working script
                 self.serial_conn = serial.Serial(
                     port=self.port,
                     baudrate=self.baudrate,
@@ -268,23 +276,22 @@ class BongoCatEngine:
                 )
                 time.sleep(2)  # Wait for ESP32 to restart
                 
-                # Test connection
-                self.send_command("PING")
-                time.sleep(0.1)
+                # Perform version negotiation with safe degrade
+                try:
+                    info = hello(self.serial_conn, req_cap=0x000000FF)
+                    fw_ver = info["fw_ver"]
+                    caps = info["cap"]
+                    print(f"[serial] FW={fw_ver} CAP=0x{caps:08X}")
+                    self.fw_info = info  # Store for later use
+                except VersionIncompatible as e:
+                    # Clear warning + safe degrade
+                    print(f"[WARN] Protocol major mismatch: {e}. Falling back to legacy mode.")
+                    self.fw_info = {"fw_ver": "1.0-legacy", "cap": 0, "name": "esp32", "fw": ""}
+                    # Notify GUI of version incompatibility
+                    if self.gui:
+                        self.gui.handle_version_incompatibility(e)
                 
-                if self.serial_conn.in_waiting > 0:
-                    response = self.serial_conn.readline().decode().strip()
-                    if "PONG" in response:
-                        print(f"✅ Connected to Bongo Cat on {self.port}")
-                        print(f"🐱 ESP32 Response: {response}")
-                        # Send initial time sync
-                        self.send_initial_sync()
-                        # Update tray connection status
-                        if self.tray:
-                            self.tray.update_connection_status("connected")
-                        return True
-                
-                print(f"✅ Connected to {self.port}")
+                print(f"✅ Connected to Bongo Cat on {self.port}")
                 # Send initial time sync
                 self.send_initial_sync()
                 # Update tray connection status
@@ -363,23 +370,33 @@ class BongoCatEngine:
             print("📊 System monitor thread stopped")
     
     def _system_monitor_loop(self):
-        """Background thread that continuously monitors CPU and RAM"""
+        """Background thread that continuously monitors CPU, RAM, and hardware temperatures"""
         print("🔍 System monitoring thread started - providing real-time updates")
-        
+
         while self.system_monitor_running:
             try:
                 # Get accurate CPU reading with 1-second measurement
                 cpu_usage = psutil.cpu_percent(interval=1.0)
-                
+
                 # Get current RAM usage (this is instant)
                 memory = psutil.virtual_memory()
                 ram_usage = memory.percent
-                
+
                 # Update shared variables (thread-safe)
                 with self._data_lock:
                     self.cpu_percent = int(cpu_usage)
                     self.ram_percent = int(ram_usage)
-                
+
+                # Update hardware temperatures if enabled (every 5 seconds to avoid overwhelming sensors)
+                if self.hardware_monitor_available and self.hardware_monitoring_enabled:
+                    current_time = time.time()
+                    if not hasattr(self, '_last_temp_update'):
+                        self._last_temp_update = 0
+
+                    if current_time - self._last_temp_update >= 5.0:
+                        self.update_hardware_temperatures()
+                        self._last_temp_update = current_time
+
             except Exception as e:
                 print(f"⚠️ System monitor error: {e}")
                 # Continue running even with errors
@@ -396,14 +413,26 @@ class BongoCatEngine:
             return 0, 0
     
     def send_system_stats(self):
-        """Send system stats and current computer time to ESP32 - EXACT ORIGINAL IMPLEMENTATION"""
+        """Send system stats, temperatures, and current computer time to ESP32"""
         cpu, ram = self.get_system_stats()
         wpm = int(self.current_wpm)
-        
+
+        # Build stats command with temperatures if available and enabled
+        stats_parts = [f"CPU:{cpu}", f"RAM:{ram}", f"WPM:{wpm}"]
+
+        # Add temperature data if hardware monitoring is available and display is enabled
+        if self.hardware_monitor_available and self.hardware_monitoring_enabled:
+            display_settings = self.config.get_display_settings() if self.config else {}
+
+            if display_settings.get('show_cpu_temp') and self.cpu_temp is not None:
+                stats_parts.append(f"CPU_TEMP:{int(self.cpu_temp)}")
+            if display_settings.get('show_gpu_temp') and self.gpu_temp is not None:
+                stats_parts.append(f"GPU_TEMP:{int(self.gpu_temp)}")
+
         # Send system stats
-        stats_command = f"STATS:CPU:{cpu},RAM:{ram},WPM:{wpm}"
+        stats_command = f"STATS:{','.join(stats_parts)}"
         self.send_command(stats_command)
-        
+
         # Send current computer time (automatically synced)
         current_time = datetime.datetime.now().strftime("%H:%M")
         time_command = f"TIME:{current_time}"
@@ -820,11 +849,20 @@ class BongoCatEngine:
         update_thread.start()
         
         # Start keyboard listener on main thread - EXACT ORIGINAL THREADING MODEL
-        try:
-            with keyboard.Listener(on_press=self.on_key_press) as listener:
-                listener.join()
-        except KeyboardInterrupt:
-            pass
+        if PYNPUT_AVAILABLE:
+            try:
+                with keyboard.Listener(on_press=self.on_key_press) as listener:
+                    listener.join()
+            except KeyboardInterrupt:
+                pass
+        else:
+            print("⌨️ Keyboard monitoring disabled - pynput not available")
+            # Keep the main thread alive for other operations
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                pass
         
         return True
     
@@ -876,102 +914,70 @@ class BongoCatEngine:
     # ============================================================================
 
     def _initialize_hardware_monitoring(self):
-        """Initialize LibreHardwareMonitor for CPU/GPU temperature monitoring"""
+        """Initialize hardware monitoring with consent validation and least privilege"""
         if not self.hardware_monitoring_enabled:
             return
 
         try:
-            # Check if we're on Windows (required for LibreHardwareMonitor)
-            if platform.system() != 'Windows':
-                print("⚠️ Hardware monitoring only available on Windows")
+            # Import the new sensors module
+            from sensors import read_sensors, is_admin_windows
+
+            # Check consent using settings module
+            from settings import is_monitoring_allowed
+            if not is_monitoring_allowed(self.config.get_all_settings()):
+                print("⚠️ Hardware monitoring not consented to - disabled")
                 self.hardware_monitor_available = False
                 return
 
-            # Try to import and initialize LibreHardwareMonitor
+            # Test sensor connectivity
             try:
-                import clr
-                clr.AddReference("System")
-                clr.AddReference("libs/LibreHardwareMonitorLib")
-
-                from LibreHardwareMonitor import Hardware
-
-                self.libre_hardware_monitor = Hardware.Computer()
-                self.libre_hardware_monitor.IsCpuEnabled = True
-                self.libre_hardware_monitor.IsGpuEnabled = True
-                self.libre_hardware_monitor.Open()
-
-                self.hardware_monitor_available = True
-                print("✅ Hardware monitoring initialized (chriss158)")
-
-            except ImportError as e:
-                print(f"❌ Hardware monitoring unavailable: Missing dependencies - {e}")
-                print("💡 Install requirements_hardware.txt and ensure LibreHardwareMonitorLib.dll is in libs/")
-                self.hardware_monitor_available = False
-
+                test_config = self.config.get_all_settings()
+                test_result = read_sensors(test_config)
+                if test_result.get('gpu_temp_c') is not None or test_result.get('cpu_temp_c') is not None:
+                    self.hardware_monitor_available = True
+                    print("✅ Hardware monitoring initialized successfully")
+                    print(f"   Test reading: {test_result}")
+                else:
+                    print("⚠️ Hardware monitoring sensors not available")
+                    self.hardware_monitor_available = False
             except Exception as e:
-                print(f"❌ Hardware monitoring initialization failed: {e}")
+                print(f"⚠️ Hardware monitoring test failed: {e}")
                 self.hardware_monitor_available = False
 
+        except ImportError as e:
+            print(f"⚠️ Hardware monitoring dependencies not available: {e}")
+            self.hardware_monitor_available = False
         except Exception as e:
-            print(f"❌ Hardware monitoring setup error: {e}")
+            print(f"⚠️ Hardware monitoring initialization error: {e}")
             self.hardware_monitor_available = False
 
     def update_hardware_temperatures(self):
-        """Update CPU and GPU temperatures from hardware sensors"""
+        """Update CPU and GPU temperatures from hardware sensors with consent validation"""
         if not self.hardware_monitor_available or not self.hardware_monitoring_enabled:
             return
 
         try:
-            # Update hardware sensors
-            self.libre_hardware_monitor.Accept(self.libre_hardware_monitor.GetReport())
+            from sensors import read_sensors
+            from settings import is_monitoring_allowed
 
-            # Get CPU temperature
-            cpu_temp = self._get_cpu_temperature()
-            if cpu_temp is not None:
-                self.cpu_temp = cpu_temp
+            # Double-check consent before reading
+            if not is_monitoring_allowed(self.config.get_all_settings()):
+                print("⚠️ Hardware monitoring consent revoked - disabling")
+                self.hardware_monitor_available = False
+                return
 
-            # Get GPU temperature
-            gpu_temp = self._get_gpu_temperature()
-            if gpu_temp is not None:
-                self.gpu_temp = gpu_temp
+            # Read temperatures using new sensors module
+            temps = read_sensors(self.config.get_all_settings())
+
+            # Update instance variables
+            if temps.get('cpu_temp_c') is not None:
+                self.cpu_temp = temps['cpu_temp_c']
+            if temps.get('gpu_temp_c') is not None:
+                self.gpu_temp = temps['gpu_temp_c']
 
         except Exception as e:
-            print(f"❌ Error updating hardware temperatures: {e}")
-            self.hardware_monitor_available = False
-
-    def _get_cpu_temperature(self):
-        """Get CPU temperature from LibreHardwareMonitor"""
-        if not self.libre_hardware_monitor:
-            return None
-
-        try:
-            for hardware in self.libre_hardware_monitor.Hardware:
-                if hardware.HardwareType == hardware.HardwareType.CPU:
-                    hardware.Update()
-                    for sensor in hardware.Sensors:
-                        if sensor.SensorType == sensor.SensorType.Temperature and "CPU Package" in sensor.Name:
-                            return float(sensor.Value)
-            return None
-        except Exception as e:
-            print(f"❌ Error reading CPU temperature: {e}")
-            return None
-
-    def _get_gpu_temperature(self):
-        """Get GPU temperature from LibreHardwareMonitor"""
-        if not self.libre_hardware_monitor:
-            return None
-
-        try:
-            for hardware in self.libre_hardware_monitor.Hardware:
-                if hardware.HardwareType == hardware.HardwareType.GpuNvidia or hardware.HardwareType == hardware.HardwareType.GpuAmd:
-                    hardware.Update()
-                    for sensor in hardware.Sensors:
-                        if sensor.SensorType == sensor.SensorType.Temperature and "GPU Core" in sensor.Name:
-                            return float(sensor.Value)
-            return None
-        except Exception as e:
-            print(f"❌ Error reading GPU temperature: {e}")
-            return None
+            print(f"⚠️ Hardware temperature update error: {e}")
+            # Don't disable monitoring on temporary errors
 
     def get_hardware_status(self):
         """Get current hardware monitoring status"""

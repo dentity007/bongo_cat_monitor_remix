@@ -1,0 +1,8 @@
+{
+  "telemetry": {
+    "hardware_monitoring_enabled": false,
+    "hardware_monitoring_consented": false,
+    "provider": "auto",
+    "gpu_only": true
+  }
+}
