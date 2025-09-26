@@ -24,6 +24,32 @@
 ### Fixed
 - Repository URL references in package.json
 - Build artifact cleanup and .gitignore improvements
+# CatJAM Monitor Changelog
+
+## [Unreleased]
+
+### Added
+- Initial release of Bongo Cat Monitor Remix
+- ESP32-based display system with LVGL graphics
+- Python desktop monitoring application
+- Electron cross-platform wrapper
+- Modular Arduino code architecture
+- Comprehensive documentation and setup guides
+- **Hardware temperature monitoring** (optional, Windows-only) - CPU/GPU temperature display
+- LibreHardwareMonitor integration for real-time hardware sensors
+- Advanced settings tab with hardware monitoring controls
+- Automated semantic versioning and release workflow
+- Repository hygiene guard to prevent accidental artifact commits
+- Credits to chriss158 for original hardware monitoring implementation
+
+### Changed
+- Updated Electron to v33.2.1 for security improvements
+- Modularized Arduino firmware into logical components
+- Cleaned up dependencies and removed unused packages
+
+### Fixed
+- Repository URL references in package.json
+- Build artifact cleanup and .gitignore improvements
 
 ### Fixed
 - ESP32 platform.txt corruption causing build failures
