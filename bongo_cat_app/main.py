@@ -12,6 +12,7 @@ import time
 from config import ConfigManager
 from engine import BongoCatEngine
 from tray import BongoCatSystemTray
+import settings
 
 class BongoCatApplication:
     """Main Bongo Cat application with FIXED thread-safe GUI"""
@@ -40,6 +41,17 @@ class BongoCatApplication:
             # Initialize configuration manager
             print("📂 Loading configuration...")
             self.config = ConfigManager()
+            
+            # Guard: Ensure no polling occurs unless allowed (future-proof)
+            cfg = settings.load()
+            if not settings.is_monitoring_allowed(cfg):
+                # Do NOT start any sensor polling threads/timers
+                # If you already had a poller, wrap its start with this check.
+                print("[telemetry] Monitoring disabled or not consented; skipping sensor polling.")
+            else:
+                # start your existing sensor polling here (if you have one)
+                # e.g., start_sensor_thread(cfg)
+                pass
             
             # Initialize engine with configuration
             print("🔧 Initializing Bongo Cat Engine...")

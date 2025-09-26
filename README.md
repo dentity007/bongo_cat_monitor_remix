@@ -103,30 +103,37 @@ The app works without any API configuration, but for dynamic triggers:
 3. Upload to your ESP32 board
 
 ### 5. Hardware Monitoring Setup (Optional - Windows Only)
-For advanced CPU/GPU temperature monitoring:
+For advanced CPU/GPU temperature monitoring with privacy protection:
 
-1. **Download LibreHardwareMonitor**:
-   - Visit: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
-   - Download and build the project, or get the latest release
-
-2. **Copy DLL to project**:
-   ```bash
-   # Copy LibreHardwareMonitorLib.dll to:
-   cp LibreHardwareMonitorLib.dll bongo_cat_app/libs/
-   ```
-
-3. **Install Python dependencies**:
+1. **Install Python dependencies**:
    ```bash
    pip install -r bongo_cat_app/requirements_hardware.txt
    ```
 
-4. **Enable in settings**:
+2. **Enable in settings** (requires explicit consent):
    - Launch the app and go to Settings → Advanced tab
-   - Check "Enable hardware temperature monitoring"
-   - Optionally check "Require admin privileges for CPU temperature"
+   - **First**: Check "I consent to hardware temperature monitoring"
+   - **Then**: Check "Enable hardware temperature monitoring"
+   - **Provider**: Select "auto" (recommended) or specific provider
+   - **Mode**: Keep "GPU-only mode" checked for least privilege (recommended)
+   - **Test**: Click "Test Sensors" to verify connectivity
    - Check "Show CPU Temperature" and/or "Show GPU Temperature" in Display tab
 
-**Note**: CPU temperature monitoring requires administrator privileges on Windows.
+**Privacy & Security**:
+- ✅ **Opt-in only**: Must explicitly consent before enabling
+- ✅ **Least privilege**: GPU-only mode doesn't require admin rights
+- ✅ **Local only**: No data is transmitted externally
+- ✅ **Test before use**: Verify sensor connectivity works
+
+**Supported Providers**:
+- **auto**: Automatically detects best available provider
+- **lhm_http**: LibreHardwareMonitor (requires admin for CPU)
+- **nvml**: NVIDIA Management Library (GPU-only, no admin needed)
+
+**Troubleshooting**:
+- If "Test Sensors" fails, try different provider or check permissions
+- GPU-only mode works without administrator privileges
+- CPU monitoring requires admin rights on Windows
 
 ### 6. Run the App
 ```bash
@@ -306,6 +313,22 @@ We welcome contributions! Here's how to help:
 - Add docstrings to new functions
 - Test changes before submitting
 
+## ⚖️ Content & Licensing
+
+This project supports both **Local-only mode** and **Online mode**.
+
+- **Online mode** fetches meme templates and images from third-party services (e.g. Imgflip).  
+  - Generated images may be publicly accessible through those services.  
+  - You are responsible for rights and usage of any third-party content.  
+  - See [Imgflip Terms of Service](https://imgflip.com/terms) for details.  
+
+- **Local-only mode** runs entirely offline with the bundled trigger pack.  
+  - No external requests are made.  
+  - This is the **default for new users**.  
+  - You can switch to Online mode explicitly in the app settings.
+
+> 💡 Recommendation: start in Local-only mode if you are concerned about privacy or licensing.
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
@@ -343,6 +366,19 @@ ModuleNotFoundError: No module named 'praw'
 python3: command not found
 ```
 **Solution**: Install Python 3.9+ and recreate virtual environment
+
+### Hardware Monitoring (Windows)
+
+**Default:** OFF and least-privilege (no admin needed). Enable it in **Settings → Hardware Monitoring**.
+
+**Providers**
+- **LibreHardwareMonitor (recommended):** Open LibreHardwareMonitor → `Options → Remote Web Server → Enable` (default `http://localhost:8085`). The app reads temps from this local JSON endpoint; no admin for the app.
+- **NVML (NVIDIA GPUs):** Install `pynvml` (`pip install nvidia-ml-py3`). GPU temperature is available without admin.
+
+**Common issues**
+- *"Sensor probe failed" with `Connection refused`*: Start LibreHardwareMonitor and enable the Remote Web Server.
+- *CPU temperature missing*: Some paths require admin in third-party tools. Use LHM HTTP or switch to GPU-only.
+- *Do I need admin?* No for this app's default paths. Only run elevated if you explicitly choose a provider that requires it and understand the scope.
 
 ### Getting Help
 - 📖 **[Full Troubleshooting Guide](docs/troubleshooting_guide.md)**: Comprehensive solutions for common issues
