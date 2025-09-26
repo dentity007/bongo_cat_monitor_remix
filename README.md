@@ -306,6 +306,22 @@ We welcome contributions! Here's how to help:
 - Add docstrings to new functions
 - Test changes before submitting
 
+## ⚖️ Content & Licensing
+
+This project supports both **Local-only mode** and **Online mode**.
+
+- **Online mode** fetches meme templates and images from third-party services (e.g. Imgflip).  
+  - Generated images may be publicly accessible through those services.  
+  - You are responsible for rights and usage of any third-party content.  
+  - See [Imgflip Terms of Service](https://imgflip.com/terms) for details.  
+
+- **Local-only mode** runs entirely offline with the bundled trigger pack.  
+  - No external requests are made.  
+  - This is the **default for new users**.  
+  - You can switch to Online mode explicitly in the app settings.
+
+> 💡 Recommendation: start in Local-only mode if you are concerned about privacy or licensing.
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
