@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v1.0.0...v2.0.0) (2025-09-26)
+
+
+### Features
+
+* add optional hardware temperature monitoring ([b66614d](https://github.com/dentity007/bongo_cat_monitor_remix/commit/b66614df7c69bf02dc68cb29b0da3268ac5356c2))
+
+
+### BREAKING CHANGES
+
+* New advanced settings require configuration file update
+
 # [1.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v0.4.0...v1.0.0) (2025-09-26)
 
 
