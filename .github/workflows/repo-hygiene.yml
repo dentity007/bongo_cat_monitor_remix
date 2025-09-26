@@ -12,38 +12,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # we need both commits locally
+          fetch-depth: 0  # good hygiene; not strictly required here
 
+      # Get changed files for PRs *and* pushes
       - name: Compute changed files (A/M/R only)
-        shell: bash
+        id: changes
+        uses: tj-actions/changed-files@v45
+        with:
+          include_all_old_new_renamed_files: true
+          separator: "\n"
+          files_ignore: ""  # we want to see everything first
+
+      - name: Write A/M/R list to file
         run: |
-          set -e
-          echo "event: ${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_SHA="${{ github.event.pull_request.base.sha }}"
-            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          else
-            BASE_SHA="${{ github.event.before }}"
-            HEAD_SHA="${{ github.sha }}"
-          fi
-
-          echo "BASE_SHA=$BASE_SHA"
-          echo "HEAD_SHA=$HEAD_SHA"
-
-          # If BASE_SHA is missing (first push), just list tracked files
-          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-            echo "No valid base commit; listing tracked files."
-            git ls-files > changed_files.txt
-          else
-            # TWO-DOT diff (no merge-base needed)
-            git diff --diff-filter=AMR --name-only "$BASE_SHA" "$HEAD_SHA" > changed_files.txt
-          fi
-
-          echo "Changed files:"
-          cat changed_files.txt || true
+          printf "%s\n" "${{ steps.changes.outputs.added_files }}" \
+                         "${{ steps.changes.outputs.modified_files }}" \
+                         "${{ steps.changes.outputs.renamed_files }}" \
+            | sed '/^$/d' > changed_files.txt
+          echo "Changed files:"; cat changed_files.txt || true
 
       - name: Fail if banned paths are introduced
-        shell: bash
         run: |
           BAN_PATTERNS='
           ^node_modules/
