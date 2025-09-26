@@ -14,15 +14,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Compute diff
+      # Get list of files that are Added/Modified/Renamed only (ignore Deletions)
+      - name: Compute changed files
         run: |
-          git fetch --depth=1
-          git diff --name-only origin/${{ github.base_ref }}... > changed_files.txt || git diff --name-only HEAD^ HEAD > changed_files.txt
-          cat changed_files.txt
+          set -e
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Ensure we have the base branch ref
+            git fetch origin ${{ github.base_ref }} --depth=1 || true
+            # Compare PR HEAD to base; only A/M/R (Added/Modified/Renamed)
+            git diff --diff-filter=AMR --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          else
+            # On push to main/master: compare last two commits; only A/M/R
+            git diff --diff-filter=AMR --name-only HEAD^ HEAD > changed_files.txt
+          fi
+          echo "Changed files (A/M/R only):"
+          cat changed_files.txt || true
 
       - name: Fail if banned paths are introduced
         run: |
-          echo "Checking for banned paths..."
+          echo "Checking for banned paths in Added/Modified/Renamed files..."
+          # One regex per line
           BAN_PATTERNS='
           ^node_modules/
           (^|/)__pycache__/
@@ -35,10 +46,17 @@ jobs:
           (^|/)\.pio/
           '
           EXIT=0
+          # Empty file? nothing to check
+          if [ ! -s changed_files.txt ]; then
+            echo "No relevant file changes."
+            exit 0
+          fi
           while IFS= read -r file; do
+            # Skip empty lines
+            [ -z "$file" ] && continue
             while IFS= read -r pat; do
-              [[ -z "$pat" ]] && continue
-              if echo "$file" | grep -Eq "$pat"; then
+              [ -z "$pat" ] && continue
+              if echo "$file" | grep -Eiq "$pat"; then
                 echo "::error file=$file::Banned path matched pattern: $pat"
                 EXIT=1
               fi
