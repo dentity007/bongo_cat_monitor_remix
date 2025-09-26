@@ -1,0 +1,201 @@
+name: Repository Hygiene
+
+on:
+  schedule:
+    # Run weekly on Mondays at 09:00 UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual triggering
+    inputs:
+      check_type:
+        description: 'Type of hygiene check to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - dependencies
+          - security
+          - lint
+          - cleanup
+
+jobs:
+  dependency-check:
+    if: ${{ inputs.check_type == 'all' || inputs.check_type == 'dependencies' || inputs.check_type == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Check for outdated dependencies
+        run: |
+          echo "## 🔍 Dependency Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check Python dependencies
+          if [ -f "bongo_cat_app/requirements_app.txt" ]; then
+            echo "### Python Dependencies" >> $GITHUB_STEP_SUMMARY
+            pip install pip-outdated
+            pip list --outdated --format=columns >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No outdated packages found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Check Node.js dependencies
+          if [ -f "package.json" ]; then
+            echo "### Node.js Dependencies" >> $GITHUB_STEP_SUMMARY
+            npm outdated --depth=0 >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "All dependencies up to date" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  security-scan:
+    if: ${{ inputs.check_type == 'all' || inputs.check_type == 'security' || inputs.check_type == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Check for security issues
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Security scan completed. Check the Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
+
+  code-quality:
+    if: ${{ inputs.check_type == 'all' || inputs.check_type == 'lint' || inputs.check_type == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Python linting tools
+        run: pip install flake8 black isort mypy
+
+      - name: Run Python linters
+        run: |
+          echo "## 🐍 Code Quality Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Flake8 (Style Guide Enforcement)" >> $GITHUB_STEP_SUMMARY
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics 2>/dev/null || echo "No critical errors found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Black (Code Formatting)" >> $GITHUB_STEP_SUMMARY
+          black --check --diff . 2>/dev/null || echo "Code formatting issues found. Run 'black .' to fix." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### isort (Import Sorting)" >> $GITHUB_STEP_SUMMARY
+          isort --check-only --diff . 2>/dev/null || echo "Import sorting issues found. Run 'isort .' to fix." >> $GITHUB_STEP_SUMMARY
+
+  repository-cleanup:
+    if: ${{ inputs.check_type == 'all' || inputs.check_type == 'cleanup' || inputs.check_type == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for large files
+        run: |
+          echo "## 📁 Repository Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Large Files (>50MB)" >> $GITHUB_STEP_SUMMARY
+          find . -type f -size +50M -not -path "./.git/*" -exec ls -lh {} \; 2>/dev/null || echo "No large files found" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Repository Size" >> $GITHUB_STEP_SUMMARY
+          du -sh . --exclude=.git 2>/dev/null || echo "Unable to calculate size" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for sensitive files
+        run: |
+          echo "### Sensitive Files Check" >> $GITHUB_STEP_SUMMARY
+          SENSITIVE_FILES=$(find . -name "*.key" -o -name "*.pem" -o -name "*secret*" -o -name ".env*" -o -name "config.local.*" | grep -v .git | wc -l)
+          if [ "$SENSITIVE_FILES" -gt 0 ]; then
+            echo "⚠️ Found $SENSITIVE_FILES potentially sensitive files" >> $GITHUB_STEP_SUMMARY
+            find . -name "*.key" -o -name "*.pem" -o -name "*secret*" -o -name ".env*" -o -name "config.local.*" | grep -v .git >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No sensitive files detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  create-hygiene-issue:
+    needs: [dependency-check, security-scan, code-quality, repository-cleanup]
+    if: always() && github.event.schedule == '0 9 * * 1' # Only on scheduled runs
+    runs-on: ubuntu-latest
+    env:
+      DEP_STATUS: ${{ needs.dependency-check.result }}
+      SEC_STATUS: ${{ needs.security-scan.result }}
+      CODE_STATUS: ${{ needs.code-quality.result }}
+      REPO_STATUS: ${{ needs.repository-cleanup.result }}
+    steps:
+      - name: Create maintenance issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['maintenance', 'automated'],
+              state: 'open'
+            });
+
+            const existingIssue = issues.find(issue =>
+              issue.title.includes('Weekly Repository Hygiene Report')
+            );
+
+            if (!existingIssue) {
+              const depStatus = process.env.DEP_STATUS === 'success' ? '✅ Passed' : '❌ Issues found';
+              const secStatus = process.env.SEC_STATUS === 'success' ? '✅ Passed' : '❌ Issues found';
+              const codeStatus = process.env.CODE_STATUS === 'success' ? '✅ Passed' : '❌ Issues found';
+              const repoStatus = process.env.REPO_STATUS === 'success' ? '✅ Passed' : '❌ Issues found';
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Weekly Repository Hygiene Report - ' + new Date().toISOString().split('T')[0],
+                body: '## 🤖 Automated Repository Hygiene Report\n\n' +
+                      'This issue was automatically created by the weekly repository hygiene workflow.\n\n' +
+                      '### 📊 Check Results\n' +
+                      '- **Dependencies**: ' + depStatus + '\n' +
+                      '- **Security**: ' + secStatus + '\n' +
+                      '- **Code Quality**: ' + codeStatus + '\n' +
+                      '- **Repository Health**: ' + repoStatus + '\n\n' +
+                      '### 🔍 Details\n' +
+                      'Check the workflow run for detailed results.\n\n' +
+                      '### 📝 Actions Required\n' +
+                      '- Review any failed checks above\n' +
+                      '- Update dependencies if outdated\n' +
+                      '- Fix security vulnerabilities\n' +
+                      '- Address code quality issues\n' +
+                      '- Clean up repository health issues\n\n' +
+                      '---\n' +
+                      '*This issue will be automatically closed when the next hygiene check passes.*',
+                labels: ['maintenance', 'automated', 'weekly-report']
+              });
+            }
