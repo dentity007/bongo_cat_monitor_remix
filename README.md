@@ -10,6 +10,8 @@ Transform your desk into an interactive meme factory with this enhanced Bongo Ca
 
 This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](https://github.com/vostoklabs/bongo_cat_monitor)** (MIT License). Huge thanks to them for the original firmware, animations, and ESP32 setup—I've built on their foundation with meme triggers, Imgflip integration, and enhanced documentation. Check their repo for the core magic!
 
+**Special thanks to [chriss158](https://github.com/chriss158)** for the advanced hardware temperature monitoring feature that enables real-time CPU and GPU temperature display on Windows systems.
+
 **Original License**: [MIT](https://github.com/vostoklabs/bongo_cat_monitor/blob/master/LICENSE.txt)
 
 ## ✨ Features
@@ -28,6 +30,7 @@ This project is a remix of the awesome **[Bongo Cat Monitor by Vostok Labs](http
 - **Fallback System** - Continues working even when API is unavailable
 - **Web Dashboard** - Optional web interface for configuration
 - **Serial Communication** - Robust ESP32 connectivity
+- **Hardware Temperature Monitoring** - Optional CPU/GPU temperature display (Windows only)
 
 ### 🎨 Customization
 - **Trigger Management** - JSON-based trigger configuration
@@ -99,7 +102,33 @@ The app works without any API configuration, but for dynamic triggers:
 2. Install required libraries (TFT_eSPI, LVGL)
 3. Upload to your ESP32 board
 
-### 5. Run the App
+### 5. Hardware Monitoring Setup (Optional - Windows Only)
+For advanced CPU/GPU temperature monitoring:
+
+1. **Download LibreHardwareMonitor**:
+   - Visit: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+   - Download and build the project, or get the latest release
+
+2. **Copy DLL to project**:
+   ```bash
+   # Copy LibreHardwareMonitorLib.dll to:
+   cp LibreHardwareMonitorLib.dll bongo_cat_app/libs/
+   ```
+
+3. **Install Python dependencies**:
+   ```bash
+   pip install -r bongo_cat_app/requirements_hardware.txt
+   ```
+
+4. **Enable in settings**:
+   - Launch the app and go to Settings → Advanced tab
+   - Check "Enable hardware temperature monitoring"
+   - Optionally check "Require admin privileges for CPU temperature"
+   - Check "Show CPU Temperature" and/or "Show GPU Temperature" in Display tab
+
+**Note**: CPU temperature monitoring requires administrator privileges on Windows.
+
+### 6. Run the App
 ```bash
 cd app
 python main.py --mode normal

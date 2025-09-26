@@ -95,6 +95,7 @@ class BongoCatSettingsGUI:
             self.create_behavior_tab(notebook)
             self.create_connection_tab(notebook)
             self.create_startup_tab(notebook)
+            self.create_advanced_tab(notebook)
             
             # Create button frame
             button_frame = ttk.Frame(self.window)
@@ -149,6 +150,24 @@ class BongoCatSettingsGUI:
         self.widgets['show_time'] = tk.BooleanVar()
         ttk.Checkbutton(display_group, text="Show Clock", 
                        variable=self.widgets['show_time'], command=self.on_setting_changed).pack(anchor='w', pady=2)
+        
+        # Hardware monitoring options (chriss158 contribution)
+        ttk.Separator(display_group, orient='horizontal').pack(fill='x', pady=10)
+        ttk.Label(display_group, text="Hardware Monitoring (Advanced):", font=('TkDefaultFont', 9, 'bold')).pack(anchor='w', pady=(5, 2))
+        
+        self.widgets['show_cpu_temp'] = tk.BooleanVar()
+        cpu_temp_cb = ttk.Checkbutton(display_group, text="Show CPU Temperature", 
+                                     variable=self.widgets['show_cpu_temp'], command=self.on_setting_changed)
+        cpu_temp_cb.pack(anchor='w', pady=2)
+        
+        self.widgets['show_gpu_temp'] = tk.BooleanVar()
+        gpu_temp_cb = ttk.Checkbutton(display_group, text="Show GPU Temperature", 
+                                     variable=self.widgets['show_gpu_temp'], command=self.on_setting_changed)
+        gpu_temp_cb.pack(anchor='w', pady=2)
+        
+        # Hardware monitoring status
+        self.widgets['hardware_status'] = ttk.Label(display_group, text="", font=('TkDefaultFont', 8), foreground='blue')
+        self.widgets['hardware_status'].pack(anchor='w', pady=(5, 0))
         
         # Time format section
         time_group = ttk.LabelFrame(main_frame, text="Time Format", padding=15)
@@ -297,6 +316,51 @@ class BongoCatSettingsGUI:
         
         self.update_status_info()
     
+    def create_advanced_tab(self, notebook):
+        """Create the advanced settings tab (chriss158 contribution)"""
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text="Advanced")
+        
+        main_frame = ttk.Frame(frame)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Hardware monitoring section
+        hardware_group = ttk.LabelFrame(main_frame, text="Hardware Monitoring", padding=15)
+        hardware_group.pack(fill='x', pady=(0, 15))
+        
+        # Enable/disable hardware monitoring
+        self.widgets['hardware_monitoring'] = tk.BooleanVar(value=False)
+        ttk.Checkbutton(hardware_group, text="Enable hardware temperature monitoring", 
+                       variable=self.widgets['hardware_monitoring'], command=self.on_setting_changed).pack(anchor='w', pady=5)
+        
+        # Warning about requirements
+        warning_text = "⚠️ Requires LibreHardwareMonitorLib.dll and administrative privileges for CPU monitoring.\nOnly available on Windows."
+        warning_label = ttk.Label(hardware_group, text=warning_text, font=('TkDefaultFont', 8), 
+                                foreground='orange', wraplength=400, justify='left')
+        warning_label.pack(anchor='w', pady=(5, 10))
+        
+        # Admin privileges setting
+        admin_frame = ttk.Frame(hardware_group)
+        admin_frame.pack(fill='x', pady=(0, 5))
+        
+        self.widgets['require_admin_for_cpu'] = tk.BooleanVar(value=True)
+        ttk.Checkbutton(admin_frame, text="Require admin privileges for CPU temperature", 
+                       variable=self.widgets['require_admin_for_cpu'], command=self.on_setting_changed).pack(anchor='w')
+        
+        # Hardware status display
+        status_frame = ttk.LabelFrame(hardware_group, text="Hardware Status", padding=10)
+        status_frame.pack(fill='x', pady=(10, 0))
+        
+        self.widgets['hardware_info'] = ttk.Label(status_frame, text="Hardware monitoring: Disabled", 
+                                                font=('TkDefaultFont', 9))
+        self.widgets['hardware_info'].pack(anchor='w')
+        
+        self.widgets['temp_display'] = ttk.Label(status_frame, text="", font=('TkDefaultFont', 8), foreground='blue')
+        self.widgets['temp_display'].pack(anchor='w', pady=(5, 0))
+        
+        # Update hardware status
+        self.update_hardware_status()
+    
     def scan_ports(self):
         """Scan for available COM ports"""
         try:
@@ -345,6 +409,13 @@ class BongoCatSettingsGUI:
             self.widgets['show_wpm'].set(display.get('show_wpm', True))
             self.widgets['show_time'].set(display.get('show_time', True))
             self.widgets['time_format'].set('24' if display.get('time_format_24h', True) else '12')
+            self.widgets['show_cpu_temp'].set(display.get('show_cpu_temp', False))
+            self.widgets['show_gpu_temp'].set(display.get('show_gpu_temp', False))
+            
+            # Load advanced settings
+            advanced = self.config.get_advanced_settings()
+            self.widgets['hardware_monitoring'].set(advanced.get('hardware_monitoring', False))
+            self.widgets['require_admin_for_cpu'].set(advanced.get('require_admin_for_cpu_temp', True))
             
             # Load behavior settings
             behavior = self.config.get_behavior_settings()
@@ -434,6 +505,32 @@ class BongoCatSettingsGUI:
             status_text = f"Configuration file: {config_file}"
             self.widgets['status_label'].config(text=status_text)
     
+    def update_hardware_status(self):
+        """Update hardware monitoring status display"""
+        if 'hardware_info' not in self.widgets:
+            return
+            
+        if not self.engine:
+            self.widgets['hardware_info'].config(text="Hardware monitoring: Engine not available")
+            return
+            
+        hardware_status = self.engine.get_hardware_status()
+        
+        if hardware_status['enabled']:
+            if hardware_status['available']:
+                status_text = "Hardware monitoring: Active"
+                temp_text = f"CPU: {hardware_status['cpu_temp']:.1f}°C  GPU: {hardware_status['gpu_temp']:.1f}°C"
+            else:
+                status_text = "Hardware monitoring: Enabled (Unavailable)"
+                temp_text = "Check LibreHardwareMonitorLib.dll and Windows admin privileges"
+        else:
+            status_text = "Hardware monitoring: Disabled"
+            temp_text = ""
+            
+        self.widgets['hardware_info'].config(text=status_text)
+        if 'temp_display' in self.widgets:
+            self.widgets['temp_display'].config(text=temp_text)
+    
     def apply_settings(self):
         """Apply current settings without saving to file"""
         if not self.config:
@@ -447,6 +544,12 @@ class BongoCatSettingsGUI:
             self.config.set_setting('display', 'show_wpm', self.widgets['show_wpm'].get())
             self.config.set_setting('display', 'show_time', self.widgets['show_time'].get())
             self.config.set_setting('display', 'time_format_24h', self.widgets['time_format'].get() == '24')
+            self.config.set_setting('display', 'show_cpu_temp', self.widgets['show_cpu_temp'].get())
+            self.config.set_setting('display', 'show_gpu_temp', self.widgets['show_gpu_temp'].get())
+            
+            # Apply advanced settings
+            self.config.set_setting('advanced', 'hardware_monitoring', self.widgets['hardware_monitoring'].get())
+            self.config.set_setting('advanced', 'require_admin_for_cpu_temp', self.widgets['require_admin_for_cpu'].get())
             
             # Apply behavior settings
             self.config.set_setting('behavior', 'sleep_timeout_minutes', self.widgets['sleep_timeout'].get())

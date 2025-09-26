@@ -103,6 +103,20 @@ class BongoCatEngine:
         self.system_monitor_running = False
         self.system_monitor_thread = None
         
+        # ADVANCED HARDWARE MONITORING (Optional - chriss158 contribution)
+        self.hardware_monitoring_enabled = False
+        self.cpu_temp = 0
+        self.gpu_temp = 0
+        self.hardware_monitor_available = False
+        self.libre_hardware_monitor = None
+        
+        # Check if hardware monitoring should be enabled
+        if self.config:
+            advanced_settings = self.config.get_advanced_settings()
+            self.hardware_monitoring_enabled = advanced_settings.get('hardware_monitoring', False)
+            if self.hardware_monitoring_enabled:
+                self._initialize_hardware_monitoring()
+        
         # Idle management
         self.idle_start_time = 0
         self.idle_progression_started = False
@@ -857,5 +871,125 @@ class BongoCatEngine:
             print(f"⚠️ Configuration application error: {e}")
             print("💡 Engine will continue with default settings")
 
-# For backwards compatibility 
+    # ============================================================================
+    # ADVANCED HARDWARE MONITORING METHODS (chriss158 contribution)
+    # ============================================================================
+
+    def _initialize_hardware_monitoring(self):
+        """Initialize LibreHardwareMonitor for CPU/GPU temperature monitoring"""
+        if not self.hardware_monitoring_enabled:
+            return
+
+        try:
+            # Check if we're on Windows (required for LibreHardwareMonitor)
+            if platform.system() != 'Windows':
+                print("⚠️ Hardware monitoring only available on Windows")
+                self.hardware_monitor_available = False
+                return
+
+            # Try to import and initialize LibreHardwareMonitor
+            try:
+                import clr
+                clr.AddReference("System")
+                clr.AddReference("libs/LibreHardwareMonitorLib")
+
+                from LibreHardwareMonitor import Hardware
+
+                self.libre_hardware_monitor = Hardware.Computer()
+                self.libre_hardware_monitor.IsCpuEnabled = True
+                self.libre_hardware_monitor.IsGpuEnabled = True
+                self.libre_hardware_monitor.Open()
+
+                self.hardware_monitor_available = True
+                print("✅ Hardware monitoring initialized (chriss158)")
+
+            except ImportError as e:
+                print(f"❌ Hardware monitoring unavailable: Missing dependencies - {e}")
+                print("💡 Install requirements_hardware.txt and ensure LibreHardwareMonitorLib.dll is in libs/")
+                self.hardware_monitor_available = False
+
+            except Exception as e:
+                print(f"❌ Hardware monitoring initialization failed: {e}")
+                self.hardware_monitor_available = False
+
+        except Exception as e:
+            print(f"❌ Hardware monitoring setup error: {e}")
+            self.hardware_monitor_available = False
+
+    def update_hardware_temperatures(self):
+        """Update CPU and GPU temperatures from hardware sensors"""
+        if not self.hardware_monitor_available or not self.hardware_monitoring_enabled:
+            return
+
+        try:
+            # Update hardware sensors
+            self.libre_hardware_monitor.Accept(self.libre_hardware_monitor.GetReport())
+
+            # Get CPU temperature
+            cpu_temp = self._get_cpu_temperature()
+            if cpu_temp is not None:
+                self.cpu_temp = cpu_temp
+
+            # Get GPU temperature
+            gpu_temp = self._get_gpu_temperature()
+            if gpu_temp is not None:
+                self.gpu_temp = gpu_temp
+
+        except Exception as e:
+            print(f"❌ Error updating hardware temperatures: {e}")
+            self.hardware_monitor_available = False
+
+    def _get_cpu_temperature(self):
+        """Get CPU temperature from LibreHardwareMonitor"""
+        if not self.libre_hardware_monitor:
+            return None
+
+        try:
+            for hardware in self.libre_hardware_monitor.Hardware:
+                if hardware.HardwareType == hardware.HardwareType.CPU:
+                    hardware.Update()
+                    for sensor in hardware.Sensors:
+                        if sensor.SensorType == sensor.SensorType.Temperature and "CPU Package" in sensor.Name:
+                            return float(sensor.Value)
+            return None
+        except Exception as e:
+            print(f"❌ Error reading CPU temperature: {e}")
+            return None
+
+    def _get_gpu_temperature(self):
+        """Get GPU temperature from LibreHardwareMonitor"""
+        if not self.libre_hardware_monitor:
+            return None
+
+        try:
+            for hardware in self.libre_hardware_monitor.Hardware:
+                if hardware.HardwareType == hardware.HardwareType.GpuNvidia or hardware.HardwareType == hardware.HardwareType.GpuAmd:
+                    hardware.Update()
+                    for sensor in hardware.Sensors:
+                        if sensor.SensorType == sensor.SensorType.Temperature and "GPU Core" in sensor.Name:
+                            return float(sensor.Value)
+            return None
+        except Exception as e:
+            print(f"❌ Error reading GPU temperature: {e}")
+            return None
+
+    def get_hardware_status(self):
+        """Get current hardware monitoring status"""
+        return {
+            "available": self.hardware_monitor_available,
+            "enabled": self.hardware_monitoring_enabled,
+            "cpu_temp": self.cpu_temp,
+            "gpu_temp": self.gpu_temp
+        }
+
+    def cleanup_hardware_monitoring(self):
+        """Clean up hardware monitoring resources"""
+        if self.libre_hardware_monitor:
+            try:
+                self.libre_hardware_monitor.Close()
+                print("🧹 Hardware monitoring cleaned up")
+            except Exception as e:
+                print(f"❌ Error cleaning up hardware monitoring: {e}")
+
+# For backwards compatibility
 BongoCatController = BongoCatEngine

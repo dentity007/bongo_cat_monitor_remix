@@ -5,7 +5,9 @@
     "show_ram": true,
     "show_wpm": true,
     "show_time": true,
-    "time_format_24h": true
+    "time_format_24h": true,
+    "show_cpu_temp": false,
+    "show_gpu_temp": false
   },
   "behavior": {
     "sleep_timeout_minutes": 1,
@@ -22,5 +24,9 @@
     "start_with_windows": true,
     "start_minimized": true,
     "show_notifications": true
+  },
+  "advanced": {
+    "hardware_monitoring": false,
+    "require_admin_for_cpu_temp": true
   }
 } 

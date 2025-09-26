@@ -33,7 +33,9 @@ class ConfigManager:
                 "show_ram": True,
                 "show_wpm": True,
                 "show_time": True,
-                "time_format_24h": True
+                "time_format_24h": True,
+                "show_cpu_temp": False,
+                "show_gpu_temp": False
             },
             "behavior": {
                 "sleep_timeout_minutes": 1,
@@ -49,6 +51,10 @@ class ConfigManager:
                 "start_with_windows": True,
                 "start_minimized": True,
                 "show_notifications": True
+            },
+            "advanced": {
+                "hardware_monitoring": False,
+                "require_admin_for_cpu_temp": True
             }
         }
         
@@ -77,7 +83,7 @@ class ConfigManager:
         """Validate configuration structure and values"""
         try:
             # Check required sections
-            required_sections = ["version", "display", "behavior", "connection", "startup"]
+            required_sections = ["version", "display", "behavior", "connection", "startup", "advanced"]
             for section in required_sections:
                 if section not in config:
                     print(f"❌ Missing config section: {section}")
@@ -85,10 +91,19 @@ class ConfigManager:
             
             # Validate display settings
             display = config["display"]
-            for key in ["show_cpu", "show_ram", "show_wpm", "show_time", "time_format_24h"]:
+            for key in ["show_cpu", "show_ram", "show_wpm", "show_time", "time_format_24h", "show_cpu_temp", "show_gpu_temp"]:
                 if key not in display or not isinstance(display[key], bool):
                     print(f"❌ Invalid display setting: {key}")
                     return False
+            
+            # Validate advanced settings
+            advanced = config.get("advanced", {})
+            if "hardware_monitoring" not in advanced or not isinstance(advanced["hardware_monitoring"], bool):
+                print("❌ Invalid hardware_monitoring setting")
+                return False
+            if "require_admin_for_cpu_temp" not in advanced or not isinstance(advanced["require_admin_for_cpu_temp"], bool):
+                print("❌ Invalid require_admin_for_cpu_temp setting")
+                return False
             
             # Validate behavior settings
             behavior = config["behavior"]

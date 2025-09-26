@@ -9,6 +9,9 @@
 - Electron cross-platform wrapper
 - Modular Arduino code architecture
 - Comprehensive documentation and setup guides
+- **Hardware temperature monitoring** (optional, Windows-only) - CPU/GPU temperature display
+- LibreHardwareMonitor integration for real-time hardware sensors
+- Advanced settings tab with hardware monitoring controls
 
 ### Fixed
 - ESP32 platform.txt corruption causing build failures
@@ -28,6 +31,7 @@
 - Electron v33.2.1 with electron-builder v26.0.12
 - LVGL v8.x graphics library integration
 - GitHub Actions CI/CD with semantic-release automation
+- Hardware monitoring via LibreHardwareMonitorLib.dll (chriss158 contribution)
 
 ## [v2.1.0] - 2025-09-17 - Enhanced Trigger System & Daily Updates
 
