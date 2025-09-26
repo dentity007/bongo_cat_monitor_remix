@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.0.0...v3.1.0) (2025-09-26)
+
+
+### Features
+
+* safe hardware monitoring (opt-in consent, least privilege, Test sensors UI) ([c5fd0c3](https://github.com/dentity007/bongo_cat_monitor_remix/commit/c5fd0c346955fbaf28d1c722b961712bf8387a84))
+
 # CatJAM Monitor Changelog
 
 ## [Unreleased]
