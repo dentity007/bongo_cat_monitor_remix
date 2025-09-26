@@ -1,3 +1,20 @@
+# [1.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v0.4.0...v1.0.0) (2025-09-26)
+
+
+### Bug Fixes
+
+* update repository URL in package.json for semantic-release ([9e3cc53](https://github.com/dentity007/bongo_cat_monitor_remix/commit/9e3cc530154ad4e61a9b643b8cd4685194556bba))
+
+
+### Features
+
+* add automated semantic versioning and release workflow ([7582df3](https://github.com/dentity007/bongo_cat_monitor_remix/commit/7582df36606ec5dbf2f0a35f2554764c83dabec5))
+
+
+### BREAKING CHANGES
+
+* Automated release system now manages version numbers
+
 # CatJAM Monitor Changelog
 
 ## [Unreleased]
