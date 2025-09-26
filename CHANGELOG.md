@@ -1,3 +1,11 @@
+## [3.3.1](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.3.0...v3.3.1) (2025-09-26)
+
+
+### Bug Fixes
+
+* add sys.path manipulation to test file for import resolution ([69ea51f](https://github.com/dentity007/bongo_cat_monitor_remix/commit/69ea51fceb2f2b081e1c8befc7cce103c902060a))
+* set PYTHONPATH in protocol test workflow ([3233747](https://github.com/dentity007/bongo_cat_monitor_remix/commit/3233747cbb17279c58f43b3ac40ddbf9cb1d8fd6))
+
 # [3.3.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.2.0...v3.3.0) (2025-09-26)
 
 
