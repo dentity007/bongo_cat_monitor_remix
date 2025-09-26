@@ -42,6 +42,20 @@ class BongoCatApplication:
             print("📂 Loading configuration...")
             self.config = ConfigManager()
             
+            # Initialize resilient external triggers (non-blocking)
+            print("🔄 Loading external triggers...")
+            import logging
+            from triggers_external import get_memes, extract_template_names
+            
+            log = logging.getLogger("app")
+            memes, meta = get_memes(non_blocking=True)
+            log.info("templates source=%s breaker=%s telemetry=%s",
+                     meta.get("source"), meta.get("breaker_state"), meta.get("telemetry"))
+            
+            # Use memes immediately (may be cached/stale/local); UI stays responsive.
+            names = extract_template_names(memes)
+            log.info("Loaded %d templates (e.g., %s)", len(names), names[:5])
+            
             # Guard: Ensure no polling occurs unless allowed (future-proof)
             cfg = settings.load()
             if not settings.is_monitoring_allowed(cfg):
