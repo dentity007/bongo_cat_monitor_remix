@@ -11,5 +11,4 @@ jobs:
       - name: Run protocol tests
         env:
           PYTHONPATH: ${{ github.workspace }}
-        run: |
-          pytest -q tests/test_serial_proto_sim.py
+        run: pytest -q tests/test_serial_proto_sim.py
