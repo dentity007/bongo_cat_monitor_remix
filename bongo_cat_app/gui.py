@@ -9,6 +9,9 @@ from tkinter import ttk, messagebox
 import threading
 from typing import Optional, Callable
 
+import settings
+from sensors import read_sensors, is_admin_windows
+
 class BongoCatSettingsGUI:
     """Settings GUI for Bongo Cat application"""
     
@@ -320,44 +323,76 @@ class BongoCatSettingsGUI:
         """Create the advanced settings tab (chriss158 contribution)"""
         frame = ttk.Frame(notebook)
         notebook.add(frame, text="Advanced")
-        
+
         main_frame = ttk.Frame(frame)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
-        
+
         # Hardware monitoring section
         hardware_group = ttk.LabelFrame(main_frame, text="Hardware Monitoring", padding=15)
         hardware_group.pack(fill='x', pady=(0, 15))
-        
-        # Enable/disable hardware monitoring
+
+        # Consent gate - must be checked first
+        consent_frame = ttk.Frame(hardware_group)
+        consent_frame.pack(fill='x', pady=(0, 10))
+
+        self.widgets['hardware_consent'] = tk.BooleanVar(value=False)
+        consent_cb = ttk.Checkbutton(consent_frame,
+                                   text="I consent to hardware temperature monitoring",
+                                   variable=self.widgets['hardware_consent'],
+                                   command=self.on_consent_changed)
+        consent_cb.pack(anchor='w')
+
+        consent_note = ttk.Label(consent_frame,
+                               text="⚠️ This enables temperature monitoring of your hardware.\nData stays local and is not transmitted.",
+                               font=('TkDefaultFont', 8),
+                               foreground='orange',
+                               wraplength=400,
+                               justify='left')
+        consent_note.pack(anchor='w', pady=(2, 0))
+
+        # Enable/disable hardware monitoring (only enabled after consent)
         self.widgets['hardware_monitoring'] = tk.BooleanVar(value=False)
-        ttk.Checkbutton(hardware_group, text="Enable hardware temperature monitoring", 
-                       variable=self.widgets['hardware_monitoring'], command=self.on_setting_changed).pack(anchor='w', pady=5)
-        
-        # Warning about requirements
-        warning_text = "⚠️ Requires LibreHardwareMonitorLib.dll and administrative privileges for CPU monitoring.\nOnly available on Windows."
-        warning_label = ttk.Label(hardware_group, text=warning_text, font=('TkDefaultFont', 8), 
-                                foreground='orange', wraplength=400, justify='left')
-        warning_label.pack(anchor='w', pady=(5, 10))
-        
-        # Admin privileges setting
-        admin_frame = ttk.Frame(hardware_group)
-        admin_frame.pack(fill='x', pady=(0, 5))
-        
-        self.widgets['require_admin_for_cpu'] = tk.BooleanVar(value=True)
-        ttk.Checkbutton(admin_frame, text="Require admin privileges for CPU temperature", 
-                       variable=self.widgets['require_admin_for_cpu'], command=self.on_setting_changed).pack(anchor='w')
-        
+        enable_cb = ttk.Checkbutton(hardware_group, text="Enable hardware temperature monitoring",
+                                   variable=self.widgets['hardware_monitoring'],
+                                   command=self.on_setting_changed,
+                                   state='disabled')  # Initially disabled
+        enable_cb.pack(anchor='w', pady=(10, 5))
+
+        # Provider selection
+        provider_frame = ttk.Frame(hardware_group)
+        provider_frame.pack(fill='x', pady=(5, 5))
+
+        ttk.Label(provider_frame, text="Provider:").pack(side='left')
+        self.widgets['hardware_provider'] = tk.StringVar(value='auto')
+        provider_combo = ttk.Combobox(provider_frame, textvariable=self.widgets['hardware_provider'],
+                                    values=['auto', 'lhm_http', 'nvml'], state='readonly', width=10)
+        provider_combo.pack(side='left', padx=(5, 0))
+        provider_combo.bind('<<ComboboxSelected>>', lambda e: self.on_setting_changed())
+
+        # GPU-only mode (least privilege)
+        self.widgets['gpu_only'] = tk.BooleanVar(value=True)
+        ttk.Checkbutton(hardware_group, text="GPU-only mode (recommended for least privilege)",
+                       variable=self.widgets['gpu_only'], command=self.on_setting_changed).pack(anchor='w', pady=(5, 10))
+
+        # Test button
+        test_frame = ttk.Frame(hardware_group)
+        test_frame.pack(fill='x', pady=(5, 10))
+
+        ttk.Button(test_frame, text="Test Sensors", command=self.test_hardware_sensors).pack(side='left')
+        self.widgets['test_status'] = ttk.Label(test_frame, text="", font=('TkDefaultFont', 8), foreground='green')
+        self.widgets['test_status'].pack(side='left', padx=(10, 0))
+
         # Hardware status display
         status_frame = ttk.LabelFrame(hardware_group, text="Hardware Status", padding=10)
         status_frame.pack(fill='x', pady=(10, 0))
-        
-        self.widgets['hardware_info'] = ttk.Label(status_frame, text="Hardware monitoring: Disabled", 
+
+        self.widgets['hardware_info'] = ttk.Label(status_frame, text="Hardware monitoring: Disabled",
                                                 font=('TkDefaultFont', 9))
         self.widgets['hardware_info'].pack(anchor='w')
-        
+
         self.widgets['temp_display'] = ttk.Label(status_frame, text="", font=('TkDefaultFont', 8), foreground='blue')
         self.widgets['temp_display'].pack(anchor='w', pady=(5, 0))
-        
+
         # Update hardware status
         self.update_hardware_status()
     
@@ -416,6 +451,25 @@ class BongoCatSettingsGUI:
             advanced = self.config.get_advanced_settings()
             self.widgets['hardware_monitoring'].set(advanced.get('hardware_monitoring', False))
             self.widgets['require_admin_for_cpu'].set(advanced.get('require_admin_for_cpu_temp', True))
+
+            # Load telemetry settings (new consent-based system)
+            try:
+                from . import settings as app_settings
+                telemetry_cfg = app_settings.load()
+                telemetry = telemetry_cfg.get('telemetry', {})
+
+                self.widgets['hardware_consent'].set(telemetry.get('hardware_monitoring_consented', False))
+                self.widgets['hardware_provider'].set(telemetry.get('provider', 'auto'))
+                self.widgets['gpu_only'].set(telemetry.get('gpu_only', True))
+
+                # Update consent-dependent widgets
+                self.on_consent_changed()
+
+            except ImportError:
+                # Fallback if settings module not available
+                self.widgets['hardware_consent'].set(False)
+                self.widgets['hardware_provider'].set('auto')
+                self.widgets['gpu_only'].set(True)
             
             # Load behavior settings
             behavior = self.config.get_behavior_settings()
@@ -451,9 +505,55 @@ class BongoCatSettingsGUI:
         """Called when any setting is changed"""
         if self.updating_from_config:
             return
-        
+
         self.changes_made = True
         self.update_preview()
+
+    def on_consent_changed(self):
+        """Handle consent checkbox changes"""
+        consented = self.widgets['hardware_consent'].get()
+
+        # Enable/disable the monitoring checkbox based on consent
+        if consented:
+            self.widgets['hardware_monitoring'].config(state='normal')
+        else:
+            self.widgets['hardware_monitoring'].set(False)
+            self.widgets['hardware_monitoring'].config(state='disabled')
+
+        self.on_setting_changed()
+
+    def test_hardware_sensors(self):
+        """Test hardware sensor connectivity"""
+        self.widgets['test_status'].config(text="Testing...", foreground='orange')
+        self.window.update()
+
+        try:
+            # Import settings and sensors
+            from . import settings, sensors
+
+            # Load current config
+            cfg = settings.load()
+
+            # Update config with current GUI values
+            cfg['telemetry']['hardware_monitoring_consented'] = self.widgets['hardware_consent'].get()
+            cfg['telemetry']['hardware_monitoring_enabled'] = self.widgets['hardware_monitoring'].get()
+            cfg['telemetry']['provider'] = self.widgets['hardware_provider'].get()
+            cfg['telemetry']['gpu_only'] = self.widgets['gpu_only'].get()
+
+            # Test the sensors
+            monitor = sensors.HardwareMonitor(cfg)
+            if monitor.test_connection():
+                self.widgets['test_status'].config(text="✓ Connected", foreground='green')
+            else:
+                self.widgets['test_status'].config(text="✗ Failed", foreground='red')
+
+        except ImportError as e:
+            self.widgets['test_status'].config(text=f"✗ Missing: {e}", foreground='red')
+        except Exception as e:
+            self.widgets['test_status'].config(text=f"✗ Error: {str(e)[:30]}", foreground='red')
+
+        # Update hardware status after test
+        self.update_hardware_status()
     
     def on_sleep_timeout_changed(self, value):
         """Handle sleep timeout slider change"""
@@ -550,6 +650,21 @@ class BongoCatSettingsGUI:
             # Apply advanced settings
             self.config.set_setting('advanced', 'hardware_monitoring', self.widgets['hardware_monitoring'].get())
             self.config.set_setting('advanced', 'require_admin_for_cpu_temp', self.widgets['require_admin_for_cpu'].get())
+
+            # Apply telemetry settings (new consent-based system)
+            try:
+                from . import settings as app_settings
+                telemetry_cfg = app_settings.load()
+
+                telemetry_cfg['telemetry']['hardware_monitoring_consented'] = self.widgets['hardware_consent'].get()
+                telemetry_cfg['telemetry']['hardware_monitoring_enabled'] = self.widgets['hardware_monitoring'].get()
+                telemetry_cfg['telemetry']['provider'] = self.widgets['hardware_provider'].get()
+                telemetry_cfg['telemetry']['gpu_only'] = self.widgets['gpu_only'].get()
+
+                app_settings.save(telemetry_cfg)
+
+            except ImportError:
+                print("⚠️ Settings module not available, telemetry settings not saved")
             
             # Apply behavior settings
             self.config.set_setting('behavior', 'sleep_timeout_minutes', self.widgets['sleep_timeout'].get())
@@ -686,6 +801,117 @@ class BongoCatSettingsGUI:
                 except:
                     pass
                 self.window = None
+
+    def create_advanced_tab(self, notebook):
+        """Create the advanced settings tab"""
+        frame = ttk.Frame(notebook)
+        notebook.add(frame, text="Advanced")
+        
+        main_frame = ttk.Frame(frame)
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        
+        # Hardware monitoring section
+        self._build_hardware_monitoring_section(main_frame)
+
+    def _build_hardware_monitoring_section(self, parent):
+        self._cfg = getattr(self, "_cfg", settings.load())
+
+        # Bindable state
+        self._hm_enabled_var = tk.BooleanVar(value=self._cfg["telemetry"]["hardware_monitoring_enabled"])
+        self._gpu_only_var   = tk.BooleanVar(value=self._cfg["telemetry"]["gpu_only"])
+        self._provider_var   = tk.StringVar(value=self._cfg["telemetry"]["provider"])
+
+        # Toggle (gated by consent)
+        def on_toggle():
+            if self._hm_enabled_var.get():
+                if not self._cfg["telemetry"]["hardware_monitoring_consented"]:
+                    if not self._show_consent_once():
+                        self._hm_enabled_var.set(False)
+                        return
+            self._cfg["telemetry"]["hardware_monitoring_enabled"] = self._hm_enabled_var.get()
+            settings.save(self._cfg)
+
+        # GPU-only
+        def on_gpu_only():
+            self._cfg["telemetry"]["gpu_only"] = self._gpu_only_var.get()
+            settings.save(self._cfg)
+
+        # Provider change
+        def on_provider():
+            self._cfg["telemetry"]["provider"] = self._provider_var.get()
+            settings.save(self._cfg)
+
+        # --- UI widgets ---
+        frm = tk.LabelFrame(parent, text="Hardware Monitoring")
+        frm.pack(fill="x", pady=6)
+
+        tk.Checkbutton(
+            frm, text="Enable hardware monitoring (requires consent)",
+            variable=self._hm_enabled_var, command=on_toggle
+        ).pack(anchor="w", padx=8, pady=4)
+
+        tk.Checkbutton(
+            frm, text="GPU-only (least privilege; recommended)",
+            variable=self._gpu_only_var, command=on_gpu_only
+        ).pack(anchor="w", padx=8, pady=2)
+
+        row = tk.Frame(frm)
+        tk.Label(row, text="Provider:").pack(side="left", padx=(8, 4))
+        for p in ("auto", "lhm_http", "nvml"):
+            tk.Radiobutton(row, text=p, value=p, variable=self._provider_var, command=on_provider)\
+                .pack(side="left", padx=4)
+        row.pack(anchor="w", pady=4)
+
+        tk.Button(frm, text="Test sensors", command=self._test_sensors).pack(anchor="w", padx=8, pady=6)
+
+    def _show_consent_once(self) -> bool:
+        # One-time modal
+        if self._cfg["telemetry"]["hardware_monitoring_consented"]:
+            return True
+        consent = tk.Toplevel(self.window)
+        consent.title("Hardware Monitoring Consent")
+        consent.grab_set()
+        txt = (
+            "This feature reads local hardware sensors (e.g., GPU/CPU temperature) "
+            "to drive animations. By default, the app uses least-privilege methods "
+            "(no admin rights). It may query a local LibreHardwareMonitor endpoint "
+            "or GPU libraries. No data leaves your machine.\n\n"
+            "Do you consent to enable hardware monitoring?"
+        )
+        msg = tk.Message(consent, text=txt, width=440)
+        msg.pack(padx=12, pady=12)
+
+        agreed = {"ok": False}
+        def accept():
+            agreed["ok"] = True
+            self._cfg["telemetry"]["hardware_monitoring_consented"] = True
+            settings.save(self._cfg)
+            consent.destroy()
+        def decline():
+            consent.destroy()
+
+        btns = tk.Frame(consent)
+        tk.Button(btns, text="I Consent", command=accept).pack(side="left", padx=6)
+        tk.Button(btns, text="Cancel", command=decline).pack(side="left", padx=6)
+        btns.pack(pady=8)
+
+        self.window.wait_window(consent)
+        return agreed["ok"]
+
+    def _test_sensors(self):
+        try:
+            data = read_sensors(self._cfg)
+            msg = f"Sensor probe OK:\n{data}"
+        except Exception as e:
+            msg = f"Sensor probe failed:\n{e}"
+
+        # Helpful hints
+        if self._provider_var.get() in ("auto", "lhm_http"):
+            msg += "\n\nTip: If using LibreHardwareMonitor, open it and enable " \
+                   "'Options → Remote Web Server' (default http://localhost:8085)."
+        msg += "\n\nNote: App is {}elevated.".format("" if is_admin_windows() else "NOT ")
+
+        messagebox.showinfo("Test sensors", msg)
 
 def main():
     """Test the settings GUI independently"""

@@ -2,17 +2,14 @@
 # Optional dependencies for advanced CPU/GPU temperature monitoring
 # Only install these if you want hardware monitoring features
 
-# Windows hardware monitoring (requires LibreHardwareMonitorLib.dll)
-# pythonnet>=3.0.0  # For .NET interop with LibreHardwareMonitor
-# Note: pythonnet requires .NET Framework and may need special installation
+# HTTP-based LibreHardwareMonitor access (cross-platform, no admin needed)
+requests>=2.31.0
 
-# Alternative: Use WMI for basic hardware info (Windows only)
-# wmi>=1.5.1
+# NVIDIA GPU monitoring (optional, GPU-only, no admin needed)
+nvidia-ml-py3>=7.352.0
 
-# For admin privilege checking
-# pywin32>=306  # Windows API access
-
-# Note: Hardware monitoring requires:
-# 1. LibreHardwareMonitorLib.dll in libs/ directory
-# 2. Administrative privileges for CPU temperature
-# 3. Windows OS (Linux/Mac not supported)
+# Note: Hardware monitoring features:
+# - Require explicit user consent before enabling
+# - GPU-only mode works without administrator privileges
+# - CPU monitoring requires admin rights on Windows
+# - All monitoring is local-only (no external data transmission)
