@@ -12,29 +12,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # ensure both base/head commits are present for proper diffs
-          fetch-depth: 0
+          fetch-depth: 0  # we need both commits locally
 
       - name: Compute changed files (A/M/R only)
         shell: bash
         run: |
           set -e
+          echo "event: ${{ github.event_name }}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_SHA="${{ github.event.pull_request.base.sha }}"
             HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-            git diff --diff-filter=AMR --name-only "$BASE_SHA" "$HEAD_SHA" > changed_files.txt
           else
-            # push event
             BASE_SHA="${{ github.event.before }}"
             HEAD_SHA="${{ github.sha }}"
-            if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
-              # first commit or shallow history: fall back to listing tracked files
-              git ls-files > changed_files.txt
-            else
-              git diff --diff-filter=AMR --name-only "$BASE_SHA" "$HEAD_SHA" > changed_files.txt
-            fi
           fi
-          echo "Changed files:"; cat changed_files.txt || true
+
+          echo "BASE_SHA=$BASE_SHA"
+          echo "HEAD_SHA=$HEAD_SHA"
+
+          # If BASE_SHA is missing (first push), just list tracked files
+          if [ -z "$BASE_SHA" ] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            echo "No valid base commit; listing tracked files."
+            git ls-files > changed_files.txt
+          else
+            # TWO-DOT diff (no merge-base needed)
+            git diff --diff-filter=AMR --name-only "$BASE_SHA" "$HEAD_SHA" > changed_files.txt
+          fi
+
+          echo "Changed files:"
+          cat changed_files.txt || true
 
       - name: Fail if banned paths are introduced
         shell: bash
