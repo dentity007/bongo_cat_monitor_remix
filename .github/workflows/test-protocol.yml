@@ -8,4 +8,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install pyserial pytest
-      - run: pytest -q tests/test_serial_proto_sim.py
+      - name: Run protocol tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          pytest -q tests/test_serial_proto_sim.py
