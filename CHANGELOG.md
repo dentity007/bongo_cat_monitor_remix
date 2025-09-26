@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.2.0...v3.3.0) (2025-09-26)
+
+
+### Features
+
+* implement Serial Protocol v2 with version negotiation and safe degradation ([31d69db](https://github.com/dentity007/bongo_cat_monitor_remix/commit/31d69db8bea3184a759f77f604cc9e2910ec8c5c))
+
 # [3.2.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.1.0...v3.2.0) (2025-09-26)
 
 
