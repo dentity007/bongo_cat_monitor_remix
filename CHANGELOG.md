@@ -1,3 +1,11 @@
+# [3.2.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.1.0...v3.2.0) (2025-09-26)
+
+
+### Features
+
+* add resilience module for robust external API handling ([8988630](https://github.com/dentity007/bongo_cat_monitor_remix/commit/8988630013d4b61b35d25b8e1bd7cd387aa991b1))
+* external API resilience (TTL cache, retries, circuit breaker, telemetry, non-blocking) ([ea9e46e](https://github.com/dentity007/bongo_cat_monitor_remix/commit/ea9e46efa2ba8341bc12662d373ee771e0b15e59))
+
 # [3.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.0.0...v3.1.0) (2025-09-26)
 
 
