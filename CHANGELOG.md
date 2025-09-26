@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v2.0.0...v2.1.0) (2025-09-26)
+
+
+### Features
+
+* add automated repository hygiene workflow ([6d82e4c](https://github.com/dentity007/bongo_cat_monitor_remix/commit/6d82e4ce59e6ead5f537b6c2086937309022a41c))
+
 # [2.0.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v1.0.0...v2.0.0) (2025-09-26)
 
 
