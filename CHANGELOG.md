@@ -1,3 +1,10 @@
+## [3.3.2](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.3.1...v3.3.2) (2025-09-27)
+
+
+### Bug Fixes
+
+* add get_advanced_settings() method to ConfigManager ([50c39ba](https://github.com/dentity007/bongo_cat_monitor_remix/commit/50c39ba4716a046f8bbac8e99b921f6f5b567ac9))
+
 ## [3.3.1](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.3.0...v3.3.1) (2025-09-26)
 
 
