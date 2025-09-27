@@ -234,6 +234,11 @@ class ConfigManager:
     def get_startup_settings(self) -> Dict[str, bool]:
         """Get all startup settings"""
         return self.get_setting("startup")
+    
+    def get_advanced_settings(self) -> Dict[str, Any]:
+        """Get all advanced settings"""
+        return self.get_setting("advanced")
+
 
 if __name__ == "__main__":
     # Test the configuration manager
