@@ -12,28 +12,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # good hygiene; not strictly required here
 
-      # Get list of files that are Added/Modified/Renamed only (ignore Deletions)
-      - name: Compute changed files
+      # Get changed files for PRs *and* pushes
+      - name: Compute changed files (A/M/R only)
+        id: changes
+        uses: tj-actions/changed-files@v45
+        with:
+          include_all_old_new_renamed_files: true
+          separator: "\n"
+          files_ignore: ""  # we want to see everything first
+
+      - name: Write A/M/R list to file
         run: |
-          set -e
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # Ensure we have the base branch ref
-            git fetch origin ${{ github.base_ref }} --depth=1 || true
-            # Compare PR HEAD to base; only A/M/R (Added/Modified/Renamed)
-            git diff --diff-filter=AMR --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
-          else
-            # On push to main/master: compare last two commits; only A/M/R
-            git diff --diff-filter=AMR --name-only HEAD^ HEAD > changed_files.txt
-          fi
-          echo "Changed files (A/M/R only):"
-          cat changed_files.txt || true
+          printf "%s\n" "${{ steps.changes.outputs.added_files }}" \
+                         "${{ steps.changes.outputs.modified_files }}" \
+                         "${{ steps.changes.outputs.renamed_files }}" \
+            | sed '/^$/d' > changed_files.txt
+          echo "Changed files:"; cat changed_files.txt || true
 
       - name: Fail if banned paths are introduced
         run: |
-          echo "Checking for banned paths in Added/Modified/Renamed files..."
-          # One regex per line
           BAN_PATTERNS='
           ^node_modules/
           (^|/)__pycache__/
@@ -46,20 +45,16 @@ jobs:
           (^|/)\.pio/
           '
           EXIT=0
-          # Empty file? nothing to check
-          if [ ! -s changed_files.txt ]; then
-            echo "No relevant file changes."
-            exit 0
+          if [ -s changed_files.txt ]; then
+            while IFS= read -r file; do
+              [ -z "$file" ] && continue
+              while IFS= read -r pat; do
+                [ -z "$pat" ] && continue
+                if echo "$file" | grep -Eiq "$pat"; then
+                  echo "::error file=$file::Banned path matched: $pat"
+                  EXIT=1
+                fi
+              done <<< "$BAN_PATTERNS"
+            done < changed_files.txt
           fi
-          while IFS= read -r file; do
-            # Skip empty lines
-            [ -z "$file" ] && continue
-            while IFS= read -r pat; do
-              [ -z "$pat" ] && continue
-              if echo "$file" | grep -Eiq "$pat"; then
-                echo "::error file=$file::Banned path matched pattern: $pat"
-                EXIT=1
-              fi
-            done <<< "$BAN_PATTERNS"
-          done < changed_files.txt
           exit $EXIT

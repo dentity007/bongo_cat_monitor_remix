@@ -1,3 +1,33 @@
+## [3.3.1](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.3.0...v3.3.1) (2025-09-26)
+
+
+### Bug Fixes
+
+* add sys.path manipulation to test file for import resolution ([69ea51f](https://github.com/dentity007/bongo_cat_monitor_remix/commit/69ea51fceb2f2b081e1c8befc7cce103c902060a))
+* set PYTHONPATH in protocol test workflow ([3233747](https://github.com/dentity007/bongo_cat_monitor_remix/commit/3233747cbb17279c58f43b3ac40ddbf9cb1d8fd6))
+
+# [3.3.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.2.0...v3.3.0) (2025-09-26)
+
+
+### Features
+
+* implement Serial Protocol v2 with version negotiation and safe degradation ([31d69db](https://github.com/dentity007/bongo_cat_monitor_remix/commit/31d69db8bea3184a759f77f604cc9e2910ec8c5c))
+
+# [3.2.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.1.0...v3.2.0) (2025-09-26)
+
+
+### Features
+
+* add resilience module for robust external API handling ([8988630](https://github.com/dentity007/bongo_cat_monitor_remix/commit/8988630013d4b61b35d25b8e1bd7cd387aa991b1))
+* external API resilience (TTL cache, retries, circuit breaker, telemetry, non-blocking) ([ea9e46e](https://github.com/dentity007/bongo_cat_monitor_remix/commit/ea9e46efa2ba8341bc12662d373ee771e0b15e59))
+
+# [3.1.0](https://github.com/dentity007/bongo_cat_monitor_remix/compare/v3.0.0...v3.1.0) (2025-09-26)
+
+
+### Features
+
+* safe hardware monitoring (opt-in consent, least privilege, Test sensors UI) ([c5fd0c3](https://github.com/dentity007/bongo_cat_monitor_remix/commit/c5fd0c346955fbaf28d1c722b961712bf8387a84))
+
 # CatJAM Monitor Changelog
 
 ## [Unreleased]
