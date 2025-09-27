@@ -738,3 +738,9 @@ No fallback to static triggers
 ---
 
 *Troubleshooting Guide Version: 1.1.0 | Last Updated: September 26, 2025*
+
+#### `serial_proto.py` - Serial Protocol v2
+ESP32 communication protocol with version negotiation.
+
+**Constants:**
+- `PROTOCOL_MAJ = 2`, `PROTOCOL_MIN = 0`
